@@ -3,12 +3,12 @@
 
 namespace Ion
 {
-	Decl *parse_decl();
-	Typespec *parse_type();
-	Stmt *parse_stmt();
-	Expr *parse_expr();
+	static Decl *parse_decl();
+	static Typespec *parse_type();
+	static Stmt *parse_stmt();
+	static Expr *parse_expr();
 
-	Typespec *parse_type_func()
+	static Typespec *parse_type_func()
 	{
 		std::vector<Typespec *> args;
 		expect_token(Token::LPAREN);
@@ -28,7 +28,7 @@ namespace Ion
 		}
 		return typespec_func(args, ret);
 	}
-	Typespec *parse_type_base()
+	static Typespec *parse_type_base()
 	{
 		if (is_token(Token::NAME))
 		{
@@ -49,7 +49,7 @@ namespace Ion
 			return nullptr;
 		}
 	}
-	Typespec *parse_type()
+	static Typespec *parse_type()
 	{
 		Typespec *type{ parse_type_base() };
 		while (is_token(Token::LBRACKET) || is_token(Token::MUL))
@@ -71,7 +71,7 @@ namespace Ion
 		return type;
 	}
 
-	Expr *parse_expr_compound(Typespec *type)
+	static Expr *parse_expr_compound(Typespec *type)
 	{
 		expect_token(Token::LBRACE);
 		std::vector<Expr*> args;
@@ -86,7 +86,7 @@ namespace Ion
 		expect_token(Token::RBRACE);
 		return expr_compound(type, args);
 	}
-	Expr *parse_expr_operand()
+	static Expr *parse_expr_operand()
 	{
 		if (is_token(Token::INT))
 		{
@@ -150,7 +150,7 @@ namespace Ion
 			fatal_syntax_error("Unexpected token %s in expression", token_kind_name(token.kind)); return nullptr;
 		}
 	}
-	Expr *parse_expr_base()
+	static Expr *parse_expr_base()
 	{
 		Expr *expr{ parse_expr_operand() };
 		while (is_token(Token::LPAREN) || is_token(Token::LBRACKET) || is_token(Token::DOT))
@@ -186,11 +186,11 @@ namespace Ion
 		}
 		return expr;
 	}
-	inline bool is_unary_op()
+	static inline bool is_unary_op()
 	{
 		return is_token(Token::ADD) || is_token(Token::SUB) || is_token(Token::MUL) || is_token(Token::AND);
 	}
-	Expr *parse_expr_unary()
+	static Expr *parse_expr_unary()
 	{
 		if (is_unary_op()) 
 		{
@@ -200,11 +200,11 @@ namespace Ion
 		}
 		else { return parse_expr_base(); }
 	}
-	inline bool is_mul_op()
+	static inline bool is_mul_op()
 	{
 		return Token::FIRST_MUL <= token.kind && token.kind <= Token::LAST_MUL;
 	}
-	Expr *parse_expr_mul()
+	static Expr *parse_expr_mul()
 	{
 		Expr *expr{ parse_expr_unary() };
 		while (is_mul_op()) 
@@ -215,11 +215,11 @@ namespace Ion
 		}
 		return expr;
 	}
-	inline bool is_add_op()
+	static inline bool is_add_op()
 	{
 		return Token::FIRST_ADD <= token.kind && token.kind <= Token::LAST_ADD;
 	}
-	Expr *parse_expr_add() 
+	static Expr *parse_expr_add()
 	{
 		Expr *expr{ parse_expr_mul() };
 		while (is_add_op())
@@ -230,11 +230,11 @@ namespace Ion
 		}
 		return expr;
 	}
-	inline bool is_cmp_op()
+	static inline bool is_cmp_op()
 	{
 		return Token::FIRST_CMP <= token.kind && token.kind <= Token::LAST_CMP;
 	}
-	Expr *parse_expr_cmp()
+	static Expr *parse_expr_cmp()
 	{
 		Expr *expr{ parse_expr_add() };
 		while (is_cmp_op()) 
@@ -245,7 +245,7 @@ namespace Ion
 		}
 		return expr;
 	}
-	Expr *parse_expr_and() 
+	static Expr *parse_expr_and()
 	{
 		Expr *expr{ parse_expr_cmp() };
 		while (match_token(Token::AND))
@@ -254,7 +254,7 @@ namespace Ion
 		}
 		return expr;
 	}
-	Expr *parse_expr_or()
+	static Expr *parse_expr_or()
 	{
 		Expr *expr{ parse_expr_and() };
 		while (match_token(Token::OR))
@@ -263,7 +263,7 @@ namespace Ion
 		}
 		return expr;
 	}
-	Expr *parse_expr_ternary()
+	static Expr *parse_expr_ternary()
 	{
 		Expr *expr{ parse_expr_or() };
 		if (match_token(Token::QUESTION))
@@ -275,15 +275,15 @@ namespace Ion
 		}
 		return expr;
 	}
-	inline Expr *parse_expr() { return parse_expr_ternary(); }
-	Expr *parse_paren_expr()
+	static inline Expr *parse_expr() { return parse_expr_ternary(); }
+	static Expr *parse_paren_expr()
 	{
 		expect_token(Token::LPAREN);
 		Expr *expr{ parse_expr() };
 		expect_token(Token::RPAREN);
 		return expr;
 	}
-	StmtBlock parse_stmt_block()
+	static StmtBlock parse_stmt_block()
 	{
 		expect_token(Token::LBRACE);
 		std::vector<Stmt*> stmts;
@@ -294,7 +294,7 @@ namespace Ion
 		expect_token(Token::RBRACE);
 		return StmtBlock{ stmts };
 	}
-	Stmt *parse_stmt_if() 
+	static Stmt *parse_stmt_if()
 	{
 		Expr *cond{ parse_paren_expr() };
 		StmtBlock then_block{ parse_stmt_block() };
@@ -314,13 +314,13 @@ namespace Ion
 		return stmt_if(cond, then_block, elseifs, else_block);
 	}
 
-	Stmt *parse_stmt_while()
+	static Stmt *parse_stmt_while()
 	{
 		Expr *cond{ parse_paren_expr() };
 		return stmt_while(cond, parse_stmt_block());
 	}
 
-	Stmt *parse_stmt_do_while() 
+	static Stmt *parse_stmt_do_while()
 	{
 		StmtBlock block{ parse_stmt_block() };
 		if (!match_keyword(while_keyword)) 
@@ -328,16 +328,15 @@ namespace Ion
 			fatal_syntax_error("Expected 'while' after 'do' block");
 			return nullptr;
 		}
-		Expr *cond{ parse_paren_expr() };
 		Stmt *stmt{ stmt_do_while(parse_paren_expr(), block) };
 		expect_token(Token::SEMICOLON);
 		return stmt;
 	}
-	inline bool is_assign_op()
+	static inline bool is_assign_op()
 	{
 		return Token::FIRST_ASSIGN <= token.kind && token.kind <= Token::LAST_ASSIGN;
 	}
-	Stmt *parse_simple_stmt()
+	static Stmt *parse_simple_stmt()
 	{
 		Expr *expr{ parse_expr() };
 		Stmt *stmt;
@@ -361,7 +360,7 @@ namespace Ion
 		else { stmt = stmt_expr(expr); }
 		return stmt;
 	}
-	Stmt *parse_stmt_for()
+	static Stmt *parse_stmt_for()
 	{
 		expect_token(Token::LPAREN);
 		Stmt *init{ nullptr };
@@ -375,7 +374,7 @@ namespace Ion
 		expect_token(Token::RPAREN);
 		return stmt_for(init, cond, next, parse_stmt_block());
 	}
-	SwitchCase parse_stmt_switch_case()
+	static SwitchCase parse_stmt_switch_case()
 	{
 		std::vector<Expr*>exprs;
 		bool is_default{ false };
@@ -395,7 +394,7 @@ namespace Ion
 		}
 		return SwitchCase{ exprs, is_default, parse_stmt_block() };
 	}
-	Stmt *parse_stmt_switch()
+	static Stmt *parse_stmt_switch()
 	{
 		Expr *expr{ parse_paren_expr() };
 		std::vector<SwitchCase> cases;
@@ -407,7 +406,7 @@ namespace Ion
 		expect_token(Token::RBRACE);
 		return stmt_switch(expr, cases);
 	}
-	Stmt *parse_stmt()
+	static Stmt *parse_stmt()
 	{
 		if (is_token(Token::LBRACE)) { return stmt_block(parse_stmt_block()); }
 		else if (match_keyword(return_keyword))
@@ -431,32 +430,39 @@ namespace Ion
 		}
 	}
 
-	const char *parse_name()
+	static const char *parse_name()
 	{
 		const char *name{ token.name };
 		expect_token(Token::NAME);
 		return name;
 	}
-
-	Decl *parse_decl_enum()
+	static EnumItem parse_decl_enum_item()
+	{
+		const char *name{ parse_name() };
+		Expr *init{ nullptr };
+		if (match_token(Token::ASSIGN))
+		{
+			init = parse_expr();
+		}
+		return { name, init };
+	}
+	static Decl *parse_decl_enum()
 	{
 		const char *name{ parse_name() };
 		expect_token(Token::LBRACE);
 		std::vector<EnumItem> items;
-		while (!is_token(Token::END_OF_FILE) && !is_token(Token::RBRACE))
+		if (!is_token(Token::LBRACE))
 		{
-			const char *item_name{ parse_name() };
-			Expr *expr{ nullptr };
-			if (match_token(Token::ASSIGN))
+			items.push_back(parse_decl_enum_item());
+			while (match_token(Token::COMMA))
 			{
-				expr = parse_expr();
+				items.push_back(parse_decl_enum_item());
 			}
-			items.push_back({ name, expr });
 		}
 		expect_token(Token::RBRACE);
 		return decl_enum(name, items);
 	}
-	AggregateItem parse_decl_aggregate_item()
+	static AggregateItem parse_decl_aggregate_item()
 	{
 		std::vector<const char *> names;
 		names.push_back(parse_name());
@@ -466,7 +472,7 @@ namespace Ion
 		expect_token(Token::SEMICOLON);
 		return AggregateItem{ names, type };
 	}
-	Decl *parse_decl_aggregate(Decl::Kind kind) 
+	static Decl *parse_decl_aggregate(Decl::Kind kind)
 	{
 		assert(kind == Decl::STRUCT || kind == Decl::UNION);
 		const char *name{ parse_name() };
@@ -476,7 +482,7 @@ namespace Ion
 		expect_token(Token::RBRACE);
 		return decl_aggregate(kind, name, items);
 	}
-	Decl *parse_decl_var()
+	static Decl *parse_decl_var()
 	{
 		const char *name{ parse_name() };
 		if (match_token(Token::ASSIGN)) { return decl_var(name, nullptr, parse_expr()); }
@@ -493,26 +499,27 @@ namespace Ion
 			return nullptr;
 		}
 	}
-	Decl *parse_decl_const()
+	static Decl *parse_decl_const()
 	{
 		const char *name{ parse_name() };
 		expect_token(Token::ASSIGN);
 		return decl_const(name, parse_expr());
 	}
-	Decl *parse_decl_typedef()
+	static Decl *parse_decl_typedef()
 	{
 		const char *name{ parse_name() };
 		expect_token(Token::ASSIGN);
 		return decl_typedef(name, parse_type());
 	}
-	FuncParam parse_decl_func_param() {
+	static FuncParam parse_decl_func_param()
+	{
 		const char *name{ parse_name() };
 		expect_token(Token::COLON);
 		Typespec *type{ parse_type() };
 		return FuncParam{ name, type };
 	}
 
-	Decl *parse_decl_func() 
+	static Decl *parse_decl_func()
 	{
 		const char *name{ parse_name() };
 		expect_token(Token::LPAREN);
@@ -529,7 +536,7 @@ namespace Ion
 		return decl_func(name, params, ret_type, block);
 	}
 
-	Decl *parse_decl() 
+	static Decl *parse_decl()
 	{
 		if (match_keyword(enum_keyword)) { return parse_decl_enum(); }
 		else if (match_keyword(struct_keyword)) { return parse_decl_aggregate(Decl::STRUCT); }
@@ -545,7 +552,7 @@ namespace Ion
 		}
 	}
 
-	void parse_and_print_decl(const char *str)
+	static void parse_and_print_decl(const char *str)
 	{
 		init_stream(str);
 		Decl *decl = parse_decl();
@@ -553,7 +560,7 @@ namespace Ion
 		std::printf("\n");
 	}
 
-	void parse_test()
+	static void parse_test()
 	{
 		parse_and_print_decl("const n = sizeof(1+2)");
 		parse_and_print_decl("const n = sizeof(:int*[16])");

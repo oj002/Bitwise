@@ -9,7 +9,7 @@ namespace Ion
 	static void print_stmt(Stmt *stmt);
 	static void print_decl(Decl *expr);
 
-	size_t indent;
+	static int indent;
 
 	static void print_newline()
 	{

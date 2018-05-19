@@ -221,6 +221,8 @@ namespace Ion
 		case Token::DEC: return "--";
 		case Token::COLON_ASSIGN: return ":=";
 		}
+		assert(0);
+		return nullptr;
 	};
 
 

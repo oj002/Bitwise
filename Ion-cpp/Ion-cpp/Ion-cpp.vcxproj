@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClCompile Include="src\Ast.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Resolve.cpp" />
     <ClCompile Include="src\stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>

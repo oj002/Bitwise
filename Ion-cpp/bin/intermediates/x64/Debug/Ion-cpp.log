@@ -13,15 +13,25 @@ c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(46): warning C4624: 'Ion::Ty
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(111): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(186): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(263): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\printing.hpp(16): warning C4477: 'printf' : format string '%.*s' requires an argument of type 'int', but variadic argument 1 has type '::size_t'
-  c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\printing.hpp(16): note: this argument is used as a precision
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\parse.hpp(331): warning C4189: 'cond': local variable is initialized but not referenced
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\parse.hpp(448): warning C4189: 'item_name': local variable is initialized but not referenced
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(10): warning C4505: 'Ion::xcalloc': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(21): warning C4505: 'Ion::xrealloc': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(106): warning C4505: 'Ion::arena_free': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\printing.hpp(290): warning C4505: 'Ion::print_test': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(153): warning C4505: 'Ion::resolve_name': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(166): warning C4505: 'Ion::resolve_syms': unreferenced local function has been removed
+  Resolve.cpp
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(46): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(111): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(186): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(263): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(21): warning C4505: 'Ion::xrealloc': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(106): warning C4505: 'Ion::arena_free': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(164): warning C4505: 'Ion::common_test': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\printing.hpp(290): warning C4505: 'Ion::print_test': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\parse.hpp(563): warning C4505: 'Ion::parse_test': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(153): warning C4505: 'Ion::resolve_name': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(166): warning C4505: 'Ion::resolve_syms': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(176): warning C4505: 'Ion::resolve_test': unreferenced local function has been removed
   stdafx.cpp
   Generating Code...
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\lex.hpp(224): warning C4715: 'Ion::token_kind_name': not all control paths return a value
   Ion-cpp.vcxproj -> C:\dev\projects\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe
