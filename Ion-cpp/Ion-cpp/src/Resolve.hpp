@@ -28,11 +28,11 @@ namespace Ion
 			} array;
 			struct
 			{
-				std::vector<TypeField> fileds;
+				std::vector<TypeField> fields;
 			} aggregate;
 			struct
 			{
-				std::vector<TypeField> params;
+				std::vector<Type*> params;
 				Type *ret;
 			} func;
 		};
@@ -69,9 +69,17 @@ namespace Ion
 	static std::vector<CachedArrayType> cached_array_types;
 	Type *type_array(Type *base, size_t size);
 
-	Type *type_struct(std::vector<TypeField> fileds);
-	Type *type_union(std::vector<TypeField> fileds);
-	Type *type_func(std::vector<TypeField> params, Type *ret);
+	Type *type_struct(std::vector<TypeField> fields);
+	Type *type_union(std::vector<TypeField> fields);
+
+	struct CachedFuncType
+	{
+		std::vector<Type*> params;
+		Type *ret;
+		Type *func;
+	};
+	static std::vector<CachedFuncType> cached_func_types;
+	Type *type_func(std::vector<Type*> params, Type *ret);
 
 	struct ConstEntity
 	{
@@ -171,7 +179,7 @@ namespace Ion
 		}
 	}
 
-	// https://youtu.be/0WpCnd9E-eg?t=3850
+	// https://youtu.be/0WpCnd9E-eg?t=4663
 
 	static void resolve_test()
 	{
@@ -195,5 +203,10 @@ namespace Ion
 		Type *float3_array{ type_array(type_float, 3) };
 		assert(type_array(type_float, 3) == float3_array);
 		assert(float4_array != float3_array);
+
+		Type *int_int_func{ type_func(std::vector<Type*>{type_int}, type_int) };
+		assert(type_func(std::vector<Type*>{type_int}, type_int) == int_int_func);
+		Type *int_func{ type_func(std::vector<Type*>(), type_int) };
+		assert(type_func(std::vector<Type*>(), type_int) == int_func);
 	}
 }

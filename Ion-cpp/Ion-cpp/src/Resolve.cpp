@@ -37,4 +37,31 @@ namespace Ion
 		cached_array_types.push_back({ base, size, t });
 		return t;
 	}
+	Type *type_struct(std::vector<TypeField> fields)
+	{
+		Type *t{ type_alloc(Type::STRUCT) };
+		t->aggregate.fields = fields;
+		return t;
+	}
+	Type *type_union(std::vector<TypeField> fields)
+	{
+		Type *t{ type_alloc(Type::UNION) };
+		t->aggregate.fields = fields;
+		return t;
+	}
+	Type *type_func(std::vector<Type*> params, Type *ret)
+	{
+		for (CachedFuncType &it : cached_func_types)
+		{
+			if (it.params == params && it.ret == ret && it.params == params)
+			{
+				return it.func;
+			}
+		}
+		Type *t{ type_alloc(Type::FUNC) };
+		t->func.params = params;
+		t->func.ret = ret;
+		cached_func_types.push_back({ params, ret, t });
+		return t;
+	}
 }
