@@ -13,20 +13,6 @@ namespace Ion
 		std::vector<Stmt *> stmts;
 	};
 
-	struct FuncTypespec
-	{
-		std::vector<Typespec *> args;
-		Typespec *ret;
-	};
-	struct PtrTypespec
-	{
-		Typespec *elem;
-	};
-	struct ArrayTypespec
-	{
-		Typespec *elem;
-		Expr *size;
-	};
 	struct Typespec
 	{
 		enum Kind
@@ -39,54 +25,37 @@ namespace Ion
 		union
 		{
 			const char *name;
-			FuncTypespec func;
-			ArrayTypespec array;
-			PtrTypespec ptr;
+			struct
+			{
+				std::vector<Typespec *> args;
+				Typespec *ret;
+			} func;
+			struct
+			{
+				Typespec *elem;
+				Expr *size;
+			} array;
+			struct
+			{
+				Typespec *elem;
+			} ptr;
 		};
 	};
-
 
 	struct FuncParam
 	{
 		const char * name;
 		Typespec *type;
 	};
-	struct FuncDecl
-	{
-		std::vector<FuncParam> params;
-		Typespec *ret_type;
-		StmtBlock block;
-	};
 	struct EnumItem
 	{
 		const char *name;
 		Expr *expr;
 	};
-	struct EnumDecl
-	{
-		std::vector<EnumItem> items;
-	};
 	struct AggregateItem
 	{
 		std::vector<const char *> names;
 		Typespec *type;
-	};
-	struct AggregateDecl
-	{
-		std::vector<AggregateItem> items;
-	};
-	struct TypedefDecl
-	{
-		Typespec *type;
-	};
-	struct VarDecl
-	{
-		Typespec *type;
-		Expr *expr;
-	};
-	struct ConstDecl 
-	{
-		Expr *expr;
 	};
 	struct Decl
 	{
@@ -101,57 +70,36 @@ namespace Ion
 
 		union
 		{
-			EnumDecl enum_decl;
-			AggregateDecl aggregate;
-			FuncDecl func;
-			TypedefDecl typedef_decl;
-			VarDecl var;
-			ConstDecl const_decl;
+			struct
+			{
+				std::vector<EnumItem> items;
+			} enum_decl;
+			struct
+			{
+				std::vector<AggregateItem> items;
+			} aggregate;
+			struct
+			{
+				std::vector<FuncParam> params;
+				Typespec *ret_type;
+				StmtBlock block;
+			} func;
+			struct
+			{
+				Typespec *type;
+			} typedef_decl;
+			struct
+			{
+				Typespec *type;
+				Expr *expr;
+			} var;
+			struct
+			{
+				Expr *expr;
+			} const_decl;
 		};
 	};
 
-	struct CompoundExpr
-	{
-		Typespec *type;
-		std::vector<Expr *> args;
-	};
-	struct CastExpr
-	{
-		Typespec *type;
-		Expr * expr;
-	};
-	struct UnaryExpr
-	{
-		Token::Kind op;
-		Expr *expr;
-	};
-	struct BinaryExpr
-	{
-		Token::Kind op;
-		Expr *left;
-		Expr *right;
-	};
-	struct TernaryExpr
-	{
-		Expr *cond;
-		Expr *then_expr;
-		Expr *else_expr;
-	};
-	struct CallExpr
-	{
-		Expr  *expr;
-		std::vector<Expr *> args;
-	};
-	struct IndexExpr
-	{
-		Expr *expr;
-		Expr *index;
-	};
-	struct FieldExpr
-	{
-		Expr *expr;
-		const char *name;
-	};
 	struct Expr
 	{
 		enum Kind
@@ -174,43 +122,54 @@ namespace Ion
 			const char *name;
 			Expr *sizeof_expr;
 			Typespec *sizeof_type;
-			CompoundExpr compound;
-			CastExpr cast;
-			UnaryExpr unary;
-			BinaryExpr binary;
-			TernaryExpr ternary;
-			CallExpr call;
-			IndexExpr index;
-			FieldExpr field;
+			struct
+			{
+				Typespec *type;
+				std::vector<Expr *> args;
+			} compound;
+			struct
+			{
+				Typespec *type;
+				Expr * expr;
+			} cast;
+			struct
+			{
+				Token::Kind op;
+				Expr *expr;
+			} unary;
+			struct
+			{
+				Token::Kind op;
+				Expr *left;
+				Expr *right;
+			} binary;
+			struct
+			{
+				Expr *cond;
+				Expr *then_expr;
+				Expr *else_expr;
+			} ternary;
+			struct
+			{
+				Expr  *expr;
+				std::vector<Expr *> args;
+			} call;
+			struct
+			{
+				Expr *expr;
+				Expr *index;
+			} index;
+			struct
+			{
+				Expr *expr;
+				const char *name;
+			} field;
 		};
 	};
 
-	struct ReturnStmt
-	{
-		Expr *expr;
-	};
 	struct ElseIf
 	{
 		Expr *cond;
-		StmtBlock block;
-	};
-	struct IfStmt
-	{
-		Expr *cond;
-		StmtBlock then_block;
-		std::vector<ElseIf> elseifs;
-		StmtBlock else_block;
-	};
-	struct WhileStmt
-	{
-		Expr *cond;
-		StmtBlock block;
-	};
-	struct ForStmt
-	{
-		Stmt *init;
-		Expr *cond;
-		Stmt *next;
 		StmtBlock block;
 	};
 	struct SwitchCase 
@@ -219,22 +178,7 @@ namespace Ion
 		bool is_default;
 		StmtBlock block;
 	};
-	struct SwitchStmt
-	{
-		Expr *expr;
-		std::vector<SwitchCase> cases;
-	};
-	struct AssignStmt
-	{
-		Token::Kind op;
-		Expr *left;
-		Expr *right;
-	};
-	struct InitStmt
-	{
-		const char *name;
-		Expr *expr;
-	};
+
 	struct Stmt
 	{
 		enum Kind
@@ -250,14 +194,46 @@ namespace Ion
 		} kind;
 		union
 		{
-			ReturnStmt return_stmt;
-			IfStmt if_stmt;
-			WhileStmt while_stmt;
-			ForStmt for_stmt;
-			SwitchStmt switch_stmt;
+			struct
+			{
+				Expr *expr;
+			} return_stmt;
+			struct
+			{
+				Expr *cond;
+				StmtBlock then_block;
+				std::vector<ElseIf> elseifs;
+				StmtBlock else_block;
+			} if_stmt;
+			struct
+			{
+				Expr *cond;
+				StmtBlock block;
+			} while_stmt;
+			struct
+			{
+				Stmt *init;
+				Expr *cond;
+				Stmt *next;
+				StmtBlock block;
+			} for_stmt;
+			struct
+			{
+				Expr *expr;
+				std::vector<SwitchCase> cases;
+			} switch_stmt;
 			StmtBlock block;
-			AssignStmt assign;
-			InitStmt init;
+			struct
+			{
+				Token::Kind op;
+				Expr *left;
+				Expr *right;
+			} assign;
+			struct
+			{
+				const char *name;
+				Expr *expr;
+			} init;
 			Expr *expr;
 		};
 	};

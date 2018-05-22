@@ -1,8 +1,29 @@
-﻿  Resolve.cpp
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(46): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(111): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(186): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(263): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
+﻿  Ast.cpp
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(10): warning C4505: 'Ion::xcalloc': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(21): warning C4505: 'Ion::xrealloc': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(64): warning C4505: 'Ion::fatal_syntax_error': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(106): warning C4505: 'Ion::arena_free': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(164): warning C4505: 'Ion::common_test': unreferenced local function has been removed
+  main.cpp
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(10): warning C4505: 'Ion::xcalloc': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(21): warning C4505: 'Ion::xrealloc': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(106): warning C4505: 'Ion::arena_free': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\printing.hpp(290): warning C4505: 'Ion::print_test': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(161): warning C4505: 'Ion::resolve_name': unreferenced local function has been removed
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(174): warning C4505: 'Ion::resolve_syms': unreferenced local function has been removed
+  Resolve.cpp
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(21): warning C4505: 'Ion::xrealloc': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(106): warning C4505: 'Ion::arena_free': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(164): warning C4505: 'Ion::common_test': unreferenced local function has been removed
@@ -11,16 +32,6 @@ c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\parse.hpp(563): warning C4505: 'Ion:
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(161): warning C4505: 'Ion::resolve_name': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(174): warning C4505: 'Ion::resolve_syms': unreferenced local function has been removed
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(184): warning C4505: 'Ion::resolve_test': unreferenced local function has been removed
-  main.cpp
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(46): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(111): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(186): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(263): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(10): warning C4505: 'Ion::xcalloc': unreferenced local function has been removed
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(21): warning C4505: 'Ion::xrealloc': unreferenced local function has been removed
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\common.hpp(106): warning C4505: 'Ion::arena_free': unreferenced local function has been removed
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\printing.hpp(290): warning C4505: 'Ion::print_test': unreferenced local function has been removed
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(161): warning C4505: 'Ion::resolve_name': unreferenced local function has been removed
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(174): warning C4505: 'Ion::resolve_syms': unreferenced local function has been removed
+  stdafx.cpp
   Generating Code...
   Ion-cpp.vcxproj -> C:\dev\projects\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe
