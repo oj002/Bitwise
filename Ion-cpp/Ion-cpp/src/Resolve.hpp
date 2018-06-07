@@ -2,6 +2,8 @@
 #include "stdafx.h"
 #include "Parse.hpp"
 
+// TODO: add compiler warnings in case of wrong ordering for a cleaner coding style
+
 namespace Ion
 {
 	struct TypeField;
@@ -47,17 +49,17 @@ namespace Ion
 
 	Type *type_alloc(Type::Kind kind);
 
-	static Type type_int_val{ {Type::INT} };
-	static Type type_float_val{ { Type::FLOAT } };
-	static Type *type_int{ &type_int_val };
-	static Type *type_float{ &type_float_val };
+	extern Type type_int_val;
+	extern Type type_float_val;
+	extern Type *type_int;
+	extern Type *type_float;
 
 	struct CachedPtrType
 	{
 		Type *base;
 		Type *ptr;
 	};
-	static std::vector<CachedPtrType> cached_ptr_types;
+	extern std::vector<CachedPtrType> cached_ptr_types;
 	Type *type_ptr(Type *base);
 
 	struct CachedArrayType
@@ -66,7 +68,7 @@ namespace Ion
 		size_t size;
 		Type *array;
 	};
-	static std::vector<CachedArrayType> cached_array_types;
+	extern std::vector<CachedArrayType> cached_array_types;
 	Type *type_array(Type *base, size_t size);
 
 	Type *type_struct(std::vector<TypeField> fields);
@@ -78,7 +80,7 @@ namespace Ion
 		Type *ret;
 		Type *func;
 	};
-	static std::vector<CachedFuncType> cached_func_types;
+	extern std::vector<CachedFuncType> cached_func_types;
 	Type *type_func(std::vector<Type*> params, Type *ret);
 
 	struct ConstEntity
@@ -110,103 +112,26 @@ namespace Ion
 
 		enum Kind
 		{
-			UNRESOLVED,
-			RESOLVING,
-			RESOLVED
+			UNORDERED,
+			ORDERING,
+			ORDERED
 		} state;
 		Entity *ent;
 	};
 
-	static std::vector<Sym> sym_list;
+	extern std::vector<Sym> sym_list;
+	Sym *sym_get(const char *name);
+	void sym_put(Decl *decl);
+	
+	static std::vector<Decl *> ordered_decls;
 
-	static Sym *sym_get(const char *name)
-	{
-		for (Sym &it : sym_list)
-		{
-			if (it.name == name)
-			{
-				return &it;
-			}
-		}
-		return nullptr;
-	}
-	static void sym_put(Decl *decl)
-	{
-		assert(decl->name);
-		assert(!sym_get(decl->name));
-		sym_list.push_back({ decl->name, decl, Sym::UNRESOLVED });
-	}
+	void order_name(const char *name);
+	void order_expr(Expr *expr);
+	void sym_put(Decl * decl);
+	void order_typespec(Typespec *typespec);
+	void order_decl(Decl *decl);
 
-	static void resolve_decl(Decl *decl)
-	{
-		switch (decl->kind)
-		{
-		case Decl::CONST:
-		{
-			// ConstEntity *const_ent{ resolve_const_expr(decl->const_decl.expr) };
-			break;
-		}
-		}
-	}
+	void order_decls();
 
-	static void resolve_sym(Sym *sym)
-	{
-		switch (sym->state)
-		{
-		case Sym::RESOLVING: fatal("Cyclic dependency"); return;
-		case Sym::RESOLVED: resolve_decl(sym->decl); return;
-		}
-	}
-
-	static Sym *resolve_name(const char *name)
-	{
-		Sym *sym{ sym_get(name) };
-		if (sym) { resolve_sym(sym); }
-		else
-		{
-			fatal("Unknown name");
-			return nullptr;
-		}
-		resolve_sym(sym);
-		return sym;
-	}
-
-	static void resolve_syms()
-	{
-		for (Sym &it : sym_list)
-		{
-			resolve_sym(&it);
-		}
-	}
-
-	// https://youtu.be/0WpCnd9E-eg?t=4663
-
-	static void resolve_test()
-	{
-		const char *foo{ str_intern("foo") };
-		assert(sym_get(foo) == nullptr);
-		Decl *decl{ decl_const(foo, expr_int(42)) };
-		sym_put(decl);
-		Sym *sym{ sym_get(foo) };
-		assert(sym && sym->decl == decl);
-
-		Type *int_ptr{ type_ptr(type_int) };
-		assert(type_ptr(type_int) == int_ptr);
-		Type *float_ptr{ type_ptr(type_float) };
-		assert(type_ptr(type_float) == float_ptr);
-		assert(int_ptr != float_ptr);
-		Type *int_ptr_ptr{ type_ptr(type_ptr(type_int)) };
-		assert(type_ptr(type_ptr(type_int)) == int_ptr_ptr);
-
-		Type *float4_array{ type_array(type_float, 4) };
-		assert(type_array(type_float, 4) == float4_array);
-		Type *float3_array{ type_array(type_float, 3) };
-		assert(type_array(type_float, 3) == float3_array);
-		assert(float4_array != float3_array);
-
-		Type *int_int_func{ type_func(std::vector<Type*>{type_int}, type_int) };
-		assert(type_func(std::vector<Type*>{type_int}, type_int) == int_int_func);
-		Type *int_func{ type_func(std::vector<Type*>(), type_int) };
-		assert(type_func(std::vector<Type*>(), type_int) == int_func);
-	}
+	void resolve_test();
 }

@@ -146,7 +146,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Ast.cpp" />
+    <ClCompile Include="src\Common.cpp" />
+    <ClCompile Include="src\Lex.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Parse.cpp" />
+    <ClCompile Include="src\Printing.cpp" />
     <ClCompile Include="src\Resolve.cpp" />
     <ClCompile Include="src\stdafx.cpp" />
   </ItemGroup>
