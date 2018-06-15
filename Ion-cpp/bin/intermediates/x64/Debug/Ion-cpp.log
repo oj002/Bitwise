@@ -3,6 +3,4 @@ c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Ty
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
 c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(243): warning C4456: declaration of 'decl' hides previous local declaration
-  c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(213): note: see declaration of 'decl'
   Ion-cpp.vcxproj -> C:\dev\projects\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe

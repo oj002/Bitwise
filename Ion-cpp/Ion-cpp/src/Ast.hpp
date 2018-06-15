@@ -50,7 +50,7 @@ namespace Ion
 	struct EnumItem
 	{
 		const char *name;
-		Expr *expr;
+		Expr *init;
 	};
 	struct AggregateItem
 	{

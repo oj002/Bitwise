@@ -9,40 +9,50 @@ namespace Ion
 		return t;
 	}
 
-	Type type_int_val{ Type::INT };
-	Type type_float_val{ Type::FLOAT };
+	Type type_int_val{ Type::INT, 4 };
+	Type type_float_val{ Type::FLOAT, 4 };
 	Type *type_int{ &type_int_val };
 	Type *type_float{ &type_float_val };
+	const size_t PTR_SIZE{ 8 };
 
+	size_t type_sizeof(Type *type)
+	{
+		assert(type->kind > Type::COMPLETING);
+		assert(type->size != 0);
+		return type->size;
+	}
 	std::vector<CachedPtrType> cached_ptr_types;
-	Type *type_ptr(Type *base)
+	Type *type_ptr(Type *elem)
 	{
 		for (CachedPtrType &it : cached_ptr_types)
 		{
-			if (it.base == base)
+			if (it.elem == elem)
 			{
 				return it.ptr;
 			}
 		}
 		Type *t{ type_alloc(Type::PTR) };
-		t->ptr.base = base;
-		cached_ptr_types.push_back({ base, t });
+		t->size = PTR_SIZE;
+		t->ptr.elem = elem;
+		cached_ptr_types.push_back({ elem, t });
 		return t;
 	}
 	std::vector<CachedArrayType> cached_array_types;
-	Type *type_array(Type *base, size_t size)
+	Type *type_array(Type *elem, size_t size)
 	{
 		for (CachedArrayType &it : cached_array_types)
 		{
-			if (it.base == base && it.size == size)
+			if (it.elem == elem && it.size == size)
 			{
 				return it.array;
 			}
 		}
-		Type *t{ type_alloc(Type::ARRAY) };
-		t->array.base = base;
+		complete_type(elem);
+		Type *t = type_alloc(Type::ARRAY);
+		t->size = size * type_sizeof(elem);
+		t->array.elem = elem;
 		t->array.size = size;
-		cached_array_types.push_back({ base, size, t });
+		cached_array_types.push_back({ elem, size, t });
 		return t;
 	}
 	Type *type_struct(std::vector<TypeField> fields)
@@ -62,159 +72,354 @@ namespace Ion
 	{
 		for (CachedFuncType &it : cached_func_types)
 		{
-			if (it.params == params && it.ret == ret && it.params == params)
+			if (it.params.size() == params.size() && it.ret == ret && it.params == params)
 			{
 				return it.func;
 			}
 		}
 		Type *t{ type_alloc(Type::FUNC) };
+		t->size = PTR_SIZE;
 		t->func.params = params;
 		t->func.ret = ret;
 		cached_func_types.push_back({ params, ret, t });
 		return t;
 	}
-	std::vector<Sym> sym_list;
-	void sym_put(Decl * decl)
+	void type_complete_struct(Type *type, std::vector<TypeField> fields)
 	{
-		assert(decl->name);
-		assert(!sym_get(decl->name));
-		sym_list.push_back({ decl->name, decl, Sym::UNORDERED });
-	}
-	Sym *sym_get(const char *name)
-	{
-		for (Sym &it : sym_list)
+		assert(type->kind == Type::COMPLETING);
+		type->kind = Type::STRUCT;
+		type->size = 0;
+		for (TypeField &it : fields)
 		{
-			if (it.name == name)
+			type->size += type_sizeof(it.type);
+		}
+		type->aggregate.fields = fields;
+	}
+	void type_complete_union(Type *type, std::vector<TypeField> fields)
+	{
+		assert(type->kind == Type::COMPLETING);
+		type->kind = Type::UNION;
+		type->size = 0;
+		for (TypeField &it : fields)
+		{
+			assert(it.type->kind > Type::COMPLETING);
+			type->size = std::max(type->size, type_sizeof(it.type));
+		}
+		type->aggregate.fields = fields;
+	}
+	Type *type_incomplete(Entity *entity)
+	{
+		Type *type = type_alloc(Type::INCOMPLETE);
+		type->entity = entity;
+		return type;
+	}
+	std::vector<Entity*> entities;
+	Entity *entity_new(Entity::Kind kind, const char *name, Decl *decl)
+	{
+		Entity *e{ reinterpret_cast<Entity *>(xcalloc(1, sizeof(Decl))) };
+		e->kind = kind;
+		e->name = name;
+		e->decl = decl;
+		return e;
+	}
+	Entity *entity_decl(Decl *decl)
+	{
+		Entity::Kind kind{ Entity::NONE };
+		switch (decl->kind) {
+		case Decl::STRUCT: case Decl::UNION: case Decl::TYPEDEF: case Decl::ENUM:
+			kind = Entity::TYPE; break;
+		case Decl::VAR: kind = Entity::VAR; break;
+		case Decl::CONST: kind = Entity::CONST; break;
+		case Decl::FUNC: kind = Entity::FUNC; break;
+		default: assert(0); break;
+		}
+		Entity *entity = entity_new(kind, decl->name, decl);
+		if (decl->kind == Decl::STRUCT || decl->kind == Decl::UNION) {
+			entity->state = Entity::RESOLVED;
+			entity->type = type_incomplete(entity);
+		}
+		return entity;
+	}
+	Entity *entity_enum_const(const char *name, Decl *decl)
+	{
+		return entity_new(Entity::ENUM_CONST, name, decl);
+	}
+	Entity *entity_get(const char *name)
+	{
+		for (Entity *it : entities)
+		{
+			if (it->name == name)
 			{
-				return &it;
+				return it;
 			}
 		}
 		return nullptr;
 	}
-	void order_name(const char *name)
+	Entity *entity_install_decl(Decl *decl)
 	{
-		Sym *sym{ sym_get(name) };
-		if (!sym)
+		Entity *e{ entity_decl(decl) };
+		entities.emplace_back(e);
+		if (decl->kind == Decl::ENUM)
 		{
-			fatal("Non-existent name '%s'", name); return;
+			for (EnumItem &it : decl->enum_decl.items)
+			{
+				entities.emplace_back(entity_enum_const(it.name, decl));
+			}
 		}
-		switch (sym->state)
-		{
-		case Sym::ORDERING: fatal("Cyclic dependency"); return;
-		case Sym::UNORDERED:
-			sym->state = Sym::ORDERING;
-			order_decl(sym->decl);
-			sym->state = Sym::ORDERED;
-			ordered_decls.push_back(sym->decl);
-			return;
-		}
+		return e;
 	}
-	void order_expr(Expr *expr)
+	Entity *entity_install_type(const char *name, Type *type)
 	{
-		switch (expr->kind)
-		{
-		case Expr::INT: case Expr::FLOAT: case Expr::STR:
-			// Do nothing
-			break;
-		case Expr::NAME: order_name(expr->name); break;
-		case Expr::CAST:
-			order_typespec(expr->cast.type);
-			order_expr(expr->cast.expr);
-			break;
-		case Expr::CALL:
-			order_expr(expr->call.expr);
-			for (Expr *it : expr->call.args)
-			{
-				order_expr(it);
-			}
-			break;
-		case Expr::INDEX:
-			order_expr(expr->index.expr);
-			order_expr(expr->index.index);
-			break;
-		case Expr::FIELD:
-			order_expr(expr->field.expr);
-			break;
-		case Expr::COMPOUND:
-			if (expr->compound.type)
-			{
-				order_typespec(expr->compound.type);
-			}
-			for (Expr *it : expr->compound.args)
-			{
-				order_expr(it);
-			}
-		case Expr::UNARY: order_expr(expr->unary.expr); break;
-		case Expr::BINARY:
-			order_expr(expr->binary.right);
-			order_expr(expr->binary.left);
-			break;
-		case Expr::TERNARY:
-			order_expr(expr->ternary.cond);
-			order_expr(expr->ternary.then_expr);
-			order_expr(expr->ternary.else_expr);
-			break;
-		case Expr::SIZEOF_EXPR: order_expr(expr->sizeof_expr); break;
-		case Expr::SIZEOF_TYPE: order_typespec(expr->sizeof_type); break;
-		default: assert(0); break;
-		}
-
+		Entity *e{ entity_new(Entity::TYPE, name, nullptr) };
+		e->state = Entity::RESOLVED;
+		e->type = type;
+		entities.push_back(e);
+		return e;
 	}
-	void order_typespec(Typespec *typespec)
+	ResolvedExpr resolved_null;
+	
+	Type * resolve_typespec(Typespec *typespec)
 	{
 		switch (typespec->kind)
 		{
-		case Typespec::NAME: order_name(typespec->name); break;
+		case Typespec::NAME:
+		{
+			Entity *entity{ resolve_name(typespec->name) };
+			if (entity->kind != Entity::TYPE)
+			{
+				fatal("%s must denote a type", typespec->name);
+				return nullptr;
+			}
+			return entity->type;
+		}
+		case Typespec::PTR: return type_ptr(resolve_typespec(typespec->ptr.elem));
+		case Typespec::ARRAY: return type_array(resolve_typespec(typespec->array.elem), resolve_int_const_expr(typespec->array.size));
 		case Typespec::FUNC:
+		{
+			std::vector<Type *> args;
 			for (Typespec *it : typespec->func.args)
 			{
-				order_typespec(it);
+				args.emplace_back(resolve_typespec(it));
 			}
-			order_typespec(typespec->func.ret);
-			break;
-		case Typespec::ARRAY:
-			order_typespec(typespec->array.elem);
-			order_expr(typespec->array.size);
-			break;
-		case Typespec::PTR: order_typespec(typespec->ptr.elem); break; // TODO: think about it
-		default: assert(0); break;
+			return type_func(args, resolve_typespec(typespec->func.ret));
+		}
+		default: assert(0); return nullptr;
 		}
 	}
-	void order_decl(Decl *decl)
+	std::vector<Entity*> ordered_entities;
+
+	void complete_type(Type *type)
 	{
-		switch (decl->kind)
+		if (type->kind == Type::COMPLETING)
 		{
-		case Decl::STRUCT: case Decl::UNION:
-			for (AggregateItem &it : decl->aggregate.items)
+			fatal("Type completion cycle"); return;
+		}
+		else if (type->kind != Type::INCOMPLETE) { return; }
+		type->kind = Type::COMPLETING;
+		Decl *decl{ type->entity->decl };
+		assert(decl->kind == Decl::STRUCT || decl->kind == Decl::UNION);
+		std::vector<TypeField> fields;
+		for (AggregateItem &item : decl->aggregate.items)
+		{
+			Type *item_type{ resolve_typespec(item.type) };
+			complete_type(item_type);
+			for (const char * name : item.names)
 			{
-				order_typespec(it.type);
+				fields.emplace_back(TypeField{ name, item_type });
 			}
-			break;
-		case Decl::VAR:
-			order_typespec(decl->var.type);
-			order_expr(decl->var.expr); break;
-		case Decl::CONST: order_expr(decl->const_decl.expr); break;
-		case Decl::TYPEDEF: order_typespec(decl->typedef_decl.type); break;
-		case Decl::FUNC: break; // Do nothing
+		}
+		if (decl->kind == Decl::STRUCT) { type_complete_struct(type, fields); }
+		else
+		{
+			assert(decl->kind == Decl::UNION);
+			type_complete_union(type, fields);
+		}
+		ordered_entities.emplace_back(type->entity);
+	}
+
+	Type *resolve_decl_type(Decl *decl)
+	{
+		assert(decl->kind == Decl::TYPEDEF);
+		return resolve_typespec(decl->typedef_decl.type);
+	}
+	Type *resolve_decl_var(Decl *decl)
+	{
+		assert(decl->kind == Decl::VAR);
+		Type *type{ nullptr };
+		if (decl->var.type)
+		{
+			type = resolve_typespec(decl->var.type);
+		}
+		if (decl->var.expr)
+		{
+			ResolvedExpr result = resolve_expr(decl->var.expr);
+			if (type && result.type != type)
+			{
+				fatal("Declared var type does not match inferred type");
+			}
+			type = result.type;
+		}
+		complete_type(type);
+		return type;
+	}
+	Type *resolve_decl_const(Decl *decl, int64_t *val)
+	{
+		assert(decl->kind == Decl::CONST);
+		ResolvedExpr result = resolve_expr(decl->const_decl.expr);
+		*val = result.val;
+		return result.type;
+	}
+	void resolve_entity(Entity *entity)
+	{
+		if (entity->state == Entity::RESOLVED) { return; }
+		else if (entity->state == Entity::RESOLVING)
+		{
+			fatal("Cyclic dependency"); return;
+		}
+		assert(entity->state == Entity::UNRESOLVED);
+		entity->state = Entity::RESOLVING;
+		switch (entity->kind) {
+		case Entity::TYPE: entity->type = resolve_decl_type(entity->decl); break;
+		case Entity::VAR: entity->type = resolve_decl_var(entity->decl); break;
+		case Entity::CONST: entity->type = resolve_decl_const(entity->decl, &entity->val); break;
 		default: assert(0); break;
 		}
+		entity->state = Entity::RESOLVED;
+		ordered_entities.emplace_back(entity);
 	}
-	void order_decls()
+	void complete_entity(Entity *entity)
 	{
-		for (Sym &sym : sym_list)
+		resolve_entity(entity);
+		if (entity->kind == Entity::TYPE)
 		{
-			order_name(sym.name);
+			complete_type(entity->type);
 		}
 	}
+
+	Entity *resolve_name(const char *name)
+	{
+		Entity *entity{ entity_get(name) };
+		if (!entity)
+		{
+			fatal("Non-existent name"); return nullptr;
+		}
+		resolve_entity(entity);
+		return entity;
+	}
+
+	ResolvedExpr resolve_expr_field(Expr *expr)
+	{
+		assert(expr->kind == Expr::FIELD);
+		ResolvedExpr left{ resolve_expr(expr->field.expr) };
+		Type *type{ left.type };
+		complete_type(type);
+		if (type->kind != Type::STRUCT && type->kind != Type::UNION)
+		{
+			fatal("Can only access fields on aggregate types"); return resolved_null;
+		}
+		for (TypeField &it : type->aggregate.fields)
+		{
+			if (it.name == expr->field.name)
+			{
+				return left.is_lvalue ? resolved_lvalue(it.type) : resolved_rvalue(it.type);
+			}
+		}
+		fatal("No field named '%s'", expr->field.name);
+		return resolved_null;
+	}
+
+	ResolvedExpr resolve_expr_name(Expr *expr)
+	{
+		assert(expr->kind == Expr::NAME);
+		Entity *entity{ resolve_name(expr->name) };
+		if (entity->kind == Entity::VAR) { return resolved_lvalue(entity->type); }
+		else if (entity->kind == Entity::CONST) { return resolved_const(entity->val); }
+		else 
+		{
+			fatal("%s must be a var or const", expr->name);
+			return resolved_null;
+		}
+	}
+
+	ResolvedExpr resolve_expr_unary(Expr *expr)
+	{
+		assert(expr->kind == Expr::UNARY);
+		ResolvedExpr operand{ resolve_expr(expr->unary.expr) };
+		Type *type{ operand.type };
+		switch (expr->unary.op) 
+		{
+		case Token::MUL:
+			if (type->kind != Type::PTR) {
+				fatal("Cannot deref non-ptr type");
+			}
+			return resolved_lvalue(type->ptr.elem);
+		case Token::AND:
+			if (!operand.is_lvalue) {
+				fatal("Cannot take address of non-lvalue");
+			}
+			return resolved_rvalue(type_ptr(type));
+		default:
+			assert(0);
+			return resolved_null;
+		}
+	}
+
+	ResolvedExpr resolve_expr_binary(Expr *expr)
+	{
+		assert(expr->kind == Expr::BINARY);
+		assert(expr->binary.op == Token::ADD);
+		ResolvedExpr left = resolve_expr(expr->binary.left);
+		ResolvedExpr right = resolve_expr(expr->binary.right);
+		if (left.type != type_int) {
+			fatal("left operand of + must be int");
+		}
+		if (right.type != left.type) {
+			fatal("left and right operand of + must have same type");
+		}
+		if (left.is_const && right.is_const) {
+			return resolved_const(left.val + right.val);
+		}
+		else {
+			return resolved_rvalue(left.type);
+		}
+	}
+
+	ResolvedExpr resolve_expr(Expr *expr)
+	{
+		switch (expr->kind) {
+		case Expr::INT: return resolved_const(expr->int_val);
+		case Expr::NAME: return resolve_expr_name(expr);
+		case Expr::FIELD: return resolve_expr_field(expr);
+		case Expr::UNARY: return resolve_expr_unary(expr);
+		case Expr::BINARY: return resolve_expr_binary(expr);
+		case Expr::SIZEOF_EXPR:
+		{
+			ResolvedExpr result = resolve_expr(expr->sizeof_expr);
+			Type *type = result.type;
+			complete_type(type);
+			return resolved_const(type_sizeof(type));
+		}
+		case Expr::SIZEOF_TYPE:
+		{
+			Type *type = resolve_typespec(expr->sizeof_type);
+			complete_type(type);
+			return resolved_const(type_sizeof(type));
+		}
+		default: assert(0); return resolved_null;
+		}
+	}
+
+	int64_t resolve_int_const_expr(Expr *expr)
+	{
+		ResolvedExpr result{ resolve_expr(expr) };
+		if (!result.is_const) {
+			fatal("Expected constant expression");
+		}
+		return result.val;
+	}
+
 	void resolve_test()
 	{
-		const char *foo{ str_intern("foo") };
-		assert(sym_get(foo) == NULL);
-		Decl *decl = decl_const(foo, expr_int(42));
-		sym_put(decl);
-		Sym *sym = sym_get(foo);
-		assert(sym && sym->decl == decl);
-
 		Type *int_ptr = type_ptr(type_int);
 		assert(type_ptr(type_int) == int_ptr);
 		Type *float_ptr = type_ptr(type_float);
@@ -227,27 +432,46 @@ namespace Ion
 		Type *float3_array = type_array(type_float, 3);
 		assert(type_array(type_float, 3) == float3_array);
 		assert(float4_array != float3_array);
-		Type *int_int_func{ type_func(std::vector<Type*>(1, type_int), type_int) };
+		Type *int_int_func = type_func(std::vector<Type*>(1, type_int), type_int);
 		assert(type_func(std::vector<Type*>(1, type_int), type_int) == int_int_func);
-		Type *int_func = type_func(std::vector<Type*>(), type_int);
+		Type *int_func = type_func(std::vector<Type*>(0), type_int);
 		assert(int_int_func != int_func);
-		assert(int_func == type_func(std::vector<Type*>(), type_int));
+		assert(int_func == type_func(std::vector<Type*>(0), type_int));
 
+		const char *int_name = str_intern("int");
+		entity_install_type(int_name, type_int);
 		const char *code[] = {
-			"const a = b",
-			"const b = 1",
+			"const n = 1+sizeof(p)",
+			"var p: T*",
+			"var u = *p",
+			"struct T { a: int[n]; }",
+			"var r = &t.a",
+			"var t: T",
+			"typedef S = int[n+m]",
+			"const m = sizeof(t.a)",
+			"var i = n+m",
+			"var q = &i",
+			//        "const n = sizeof(x)",
+			//        "var x: T",
+			//        "struct T { s: S*; }",
+			//        "struct S { t: T[n]; }",
 		};
-		for (size_t i{ 0 }; i < sizeof(code) / sizeof(*code); ++i)
+		for (size_t i = 0; i < sizeof(code) / sizeof(*code); ++i)
 		{
 			init_stream(code[i]);
-			Decl *decl{ parse_decl() };
-			sym_put(decl);
+			Decl *decl = parse_decl();
+			entity_install_decl(decl);
 		}
-		order_decls();
-
-		for (Decl *it : ordered_decls)
+		for (Entity *it : entities)
 		{
-			printf("%s\n", it->name);
+			complete_entity(it);
+		}
+		for (Entity *it : ordered_entities)
+		{
+			if (it->decl) { print_decl(it->decl); }
+			else
+			{ printf("%s", it->name); }
+			printf("\n");
 		}
 	}
 }

@@ -219,7 +219,7 @@ namespace Ion
 			{
 				print_newline();
 				std::printf("(%s ", it.name);
-				if (it.expr) { print_expr(it.expr); }
+				if (it.init) { print_expr(it.init); }
 				else { std::printf("nil"); }
 				std::printf(")");
 			}
@@ -245,7 +245,8 @@ namespace Ion
 			if (d->var.type) { print_typespec(d->var.type); }
 			else { std::printf("nil"); }
 			std::printf(" ");
-			print_expr(d->var.expr);
+			if (d->var.expr) { print_expr(d->var.expr); }
+			else { printf("nil"); }
 			std::printf(")");
 			break;
 		case Decl::CONST:
