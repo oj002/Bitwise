@@ -164,6 +164,7 @@ namespace Ion
 	ResolvedExpr resolve_expr_name(Expr *expr);
 	ResolvedExpr resolve_expr_unary(Expr *expr);
 	ResolvedExpr resolve_expr_binary(Expr *expr);
+	ResolvedExpr resolve_expr_compound(Expr *expr);
 	ResolvedExpr resolve_expr(Expr *expr);
 	int64_t resolve_int_const_expr(Expr *expr);
 	void resolve_test();

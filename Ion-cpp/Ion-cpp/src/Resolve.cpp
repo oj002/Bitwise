@@ -327,7 +327,6 @@ namespace Ion
 		fatal("No field named '%s'", expr->field.name);
 		return resolved_null;
 	}
-
 	ResolvedExpr resolve_expr_name(Expr *expr)
 	{
 		assert(expr->kind == Expr::NAME);
@@ -340,7 +339,6 @@ namespace Ion
 			return resolved_null;
 		}
 	}
-
 	ResolvedExpr resolve_expr_unary(Expr *expr)
 	{
 		assert(expr->kind == Expr::UNARY);
@@ -363,7 +361,6 @@ namespace Ion
 			return resolved_null;
 		}
 	}
-
 	ResolvedExpr resolve_expr_binary(Expr *expr)
 	{
 		assert(expr->kind == Expr::BINARY);
@@ -383,12 +380,57 @@ namespace Ion
 			return resolved_rvalue(left.type);
 		}
 	}
+	ResolvedExpr resolve_expr_compound(Expr *expr)
+	{
+		assert(expr->kind == Expr::COMPOUND);
+		Type *type{ resolve_typespec(expr->compound.type) };
+		complete_type(type);
+		if (type->kind != Type::STRUCT && type->kind != Type::UNION && type->kind != Type::ARRAY)
+		{
+			fatal("Compound literals can only be used with struct, union and array types");
+		}
+		if (type->kind == Type::STRUCT || type->kind == Type::UNION)
+		{
+			assert(expr->compound.type);
+			if (expr->compound.args.size() > type->aggregate.fields.size())
+			{
+				fatal("Compound literal has to many fields");
+			}
+			for (size_t i{ 0 }; i < expr->compound.args.size(); ++i)
+			{
+				ResolvedExpr field{ resolve_expr(expr->compound.args[i]) };
+				if (field.type != type->aggregate.fields[i].type)
+				{
+					fatal("Compound literal field type error");
+				}
+			}
+		}
+		else
+		{
+			assert(type->kind == Type::ARRAY);
+			if (expr->compound.args.size() > type->array.size)
+			{
+				fatal("Compound literal has to many fields");
+			}
+			for (size_t i{ 0 }; i < expr->compound.args.size(); ++i)
+			{
+				ResolvedExpr elem{ resolve_expr(expr->compound.args[i]) };
+				if (elem.type != type->array.elem)
+				{
+					fatal("Compound literal element type mismatch");
+				}
+			}
+		}
+	
 
+		return resolved_rvalue(type);
+	}
 	ResolvedExpr resolve_expr(Expr *expr)
 	{
 		switch (expr->kind) {
 		case Expr::INT: return resolved_const(expr->int_val);
 		case Expr::NAME: return resolve_expr_name(expr);
+		case Expr::COMPOUND: return resolve_expr_compound(expr);
 		case Expr::FIELD: return resolve_expr_field(expr);
 		case Expr::UNARY: return resolve_expr_unary(expr);
 		case Expr::BINARY: return resolve_expr_binary(expr);
@@ -408,7 +450,6 @@ namespace Ion
 		default: assert(0); return resolved_null;
 		}
 	}
-
 	int64_t resolve_int_const_expr(Expr *expr)
 	{
 		ResolvedExpr result{ resolve_expr(expr) };
@@ -417,7 +458,6 @@ namespace Ion
 		}
 		return result.val;
 	}
-
 	void resolve_test()
 	{
 		Type *int_ptr = type_ptr(type_int);
@@ -441,7 +481,13 @@ namespace Ion
 		const char *int_name = str_intern("int");
 		entity_install_type(int_name, type_int);
 		const char *code[] = {
-			"const n = 1+sizeof(p)",
+			"struct Vector{ x, y: int; }",
+			"var v = Vector{1, 2}",
+			"union IntOrPtr{ i: int; p: int*; } ",
+			"var i = 42",
+			"var u = IntOrPtr{i, &i}",
+			"var a: int[3] = {1,2,3}",
+			/*"const n = 1+sizeof(p)",
 			"var p: T*",
 			"var u = *p",
 			"struct T { a: int[n]; }",
@@ -450,7 +496,7 @@ namespace Ion
 			"typedef S = int[n+m]",
 			"const m = sizeof(t.a)",
 			"var i = n+m",
-			"var q = &i",
+			"var q = &i",*/
 			//        "const n = sizeof(x)",
 			//        "var x: T",
 			//        "struct T { s: S*; }",
