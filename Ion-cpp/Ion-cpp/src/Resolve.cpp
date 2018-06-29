@@ -252,7 +252,7 @@ namespace Ion
 		}
 		if (decl->var.expr)
 		{
-			ResolvedExpr result = resolve_expr(decl->var.expr);
+			ResolvedExpr result = resolve_expr(decl->var.expr, type);
 			if (type && result.type != type)
 			{
 				fatal("Declared var type does not match inferred type");
@@ -265,9 +265,24 @@ namespace Ion
 	Type *resolve_decl_const(Decl *decl, int64_t *val)
 	{
 		assert(decl->kind == Decl::CONST);
-		ResolvedExpr result = resolve_expr(decl->const_decl.expr);
+		ResolvedExpr result = resolve_expr(decl->const_decl.expr, nullptr);
+		if (!result.is_const)
+		{
+			fatal("Initializer for const is not a constant expression");
+		}
 		*val = result.val;
 		return result.type;
+	}
+	Type *resolve_decl_func(Decl *decl)
+	{
+		assert(decl->kind == Decl::FUNC);
+		std::vector<Type*> params;
+		params.reserve(decl->func.params.size());
+		for (FuncParam &it : decl->func.params)
+		{
+			params.push_back(resolve_typespec(it.type));
+		}
+		return type_func(params, resolve_typespec(decl->func.ret_type));
 	}
 	void resolve_entity(Entity *entity)
 	{
@@ -282,6 +297,7 @@ namespace Ion
 		case Entity::TYPE: entity->type = resolve_decl_type(entity->decl); break;
 		case Entity::VAR: entity->type = resolve_decl_var(entity->decl); break;
 		case Entity::CONST: entity->type = resolve_decl_const(entity->decl, &entity->val); break;
+		case Entity::FUNC: entity->type = resolve_decl_func(entity->decl); break;
 		default: assert(0); break;
 		}
 		entity->state = Entity::RESOLVED;
@@ -310,7 +326,7 @@ namespace Ion
 	ResolvedExpr resolve_expr_field(Expr *expr)
 	{
 		assert(expr->kind == Expr::FIELD);
-		ResolvedExpr left{ resolve_expr(expr->field.expr) };
+		ResolvedExpr left{ resolve_expr(expr->field.expr, nullptr) };
 		Type *type{ left.type };
 		complete_type(type);
 		if (type->kind != Type::STRUCT && type->kind != Type::UNION)
@@ -331,10 +347,12 @@ namespace Ion
 	{
 		assert(expr->kind == Expr::NAME);
 		Entity *entity{ resolve_name(expr->name) };
-		if (entity->kind == Entity::VAR) { return resolved_lvalue(entity->type); }
-		else if (entity->kind == Entity::CONST) { return resolved_const(entity->val); }
-		else 
+		switch (entity->kind)
 		{
+		case Entity::VAR: return resolved_lvalue(entity->type);
+		case Entity::CONST: return resolved_const(entity->val);
+		case Entity::FUNC: return resolved_rvalue(entity->type);
+		default: 
 			fatal("%s must be a var or const", expr->name);
 			return resolved_null;
 		}
@@ -342,7 +360,7 @@ namespace Ion
 	ResolvedExpr resolve_expr_unary(Expr *expr)
 	{
 		assert(expr->kind == Expr::UNARY);
-		ResolvedExpr operand{ resolve_expr(expr->unary.expr) };
+		ResolvedExpr operand{ resolve_expr(expr->unary.expr, nullptr) };
 		Type *type{ operand.type };
 		switch (expr->unary.op) 
 		{
@@ -365,8 +383,8 @@ namespace Ion
 	{
 		assert(expr->kind == Expr::BINARY);
 		assert(expr->binary.op == Token::ADD);
-		ResolvedExpr left = resolve_expr(expr->binary.left);
-		ResolvedExpr right = resolve_expr(expr->binary.right);
+		ResolvedExpr left = resolve_expr(expr->binary.left, nullptr);
+		ResolvedExpr right = resolve_expr(expr->binary.right, nullptr);
 		if (left.type != type_int) {
 			fatal("left operand of + must be int");
 		}
@@ -380,10 +398,26 @@ namespace Ion
 			return resolved_rvalue(left.type);
 		}
 	}
-	ResolvedExpr resolve_expr_compound(Expr *expr)
+	ResolvedExpr resolve_expr_compound(Expr *expr, Type *expected_type)
 	{
 		assert(expr->kind == Expr::COMPOUND);
-		Type *type{ resolve_typespec(expr->compound.type) };
+		if (!expected_type && !expr->compound.type)
+		{
+			fatal("Implicitly typed compound literals used in context without expected types");
+		}
+		Type *type{ nullptr };
+		if (expr->compound.type)
+		{
+			type = resolve_typespec(expr->compound.type);
+			if (expected_type && expected_type != type)
+			{
+				fatal("Explicit compound literal type dose not match expected type");
+			}
+		}
+		else
+		{
+			type = expected_type;
+		}
 		complete_type(type);
 		if (type->kind != Type::STRUCT && type->kind != Type::UNION && type->kind != Type::ARRAY)
 		{
@@ -391,14 +425,13 @@ namespace Ion
 		}
 		if (type->kind == Type::STRUCT || type->kind == Type::UNION)
 		{
-			assert(expr->compound.type);
 			if (expr->compound.args.size() > type->aggregate.fields.size())
 			{
 				fatal("Compound literal has to many fields");
 			}
 			for (size_t i{ 0 }; i < expr->compound.args.size(); ++i)
 			{
-				ResolvedExpr field{ resolve_expr(expr->compound.args[i]) };
+				ResolvedExpr field{ resolve_expr(expr->compound.args[i], nullptr) };
 				if (field.type != type->aggregate.fields[i].type)
 				{
 					fatal("Compound literal field type error");
@@ -414,29 +447,82 @@ namespace Ion
 			}
 			for (size_t i{ 0 }; i < expr->compound.args.size(); ++i)
 			{
-				ResolvedExpr elem{ resolve_expr(expr->compound.args[i]) };
+				ResolvedExpr elem{ resolve_expr(expr->compound.args[i], nullptr) };
 				if (elem.type != type->array.elem)
 				{
 					fatal("Compound literal element type mismatch");
 				}
 			}
 		}
-	
 
 		return resolved_rvalue(type);
 	}
-	ResolvedExpr resolve_expr(Expr *expr)
+	ResolvedExpr resolve_expr_call(Expr *expr)
+	{
+		assert(expr->kind == Expr::CALL);
+		ResolvedExpr func{ resolve_expr(expr->call.expr, nullptr) };
+		complete_type(func.type);
+		if (func.type->kind != Type::FUNC)
+		{
+			fatal("Trying to call non-function value");
+		}
+		if (expr->call.args.size() != func.type->func.params.size())
+		{
+			fatal("Tried to call function with wrong number of arguments");
+		}
+		for (size_t i{ 0 }; i < expr->call.args.size(); ++i)
+		{
+			Type *param_type{ func.type->func.params[i] };
+			ResolvedExpr arg{ resolve_expr(expr->call.args[i], param_type) };
+			if (arg.type != param_type)
+			{
+				fatal("Call argument expression type doesn't match expected param type");
+			}
+		}
+
+		return resolved_rvalue(func.type->func.ret);
+	}
+	ResolvedExpr resolve_expr_ternary(Expr *expr, Type *expected_type)
+	{
+		assert(expr->kind == Expr::TERNARY);
+		ResolvedExpr cond = resolve_expr(expr->ternary.cond, nullptr);
+		
+		if (cond.type->kind != Type::INT && cond.type->kind != Type::PTR)
+		{
+			fatal("Ternary cond expression must have type int or ptr");
+		}
+		ResolvedExpr then_expr = resolve_expr(expr->ternary.then_expr, nullptr);
+		ResolvedExpr else_expr = resolve_expr(expr->ternary.else_expr, nullptr);
+		if (then_expr.type != else_expr.type)
+		{
+			fatal("Ternary then/else expr must have matching types");
+		}
+		if (cond.is_const && then_expr.is_const && else_expr.is_const)
+		{
+			return resolved_const(cond.val ? then_expr.val : else_expr.val);
+		}
+		else { return resolved_rvalue(then_expr.type); }
+	}
+	ResolvedExpr resolve_expr_index(Expr *expr)
+	{
+		assert(expr->kind == Expr::INDEX);
+		
+	}
+	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type)
 	{
 		switch (expr->kind) {
 		case Expr::INT: return resolved_const(expr->int_val);
 		case Expr::NAME: return resolve_expr_name(expr);
-		case Expr::COMPOUND: return resolve_expr_compound(expr);
+		case Expr::COMPOUND: return resolve_expr_compound(expr, expected_type);
 		case Expr::FIELD: return resolve_expr_field(expr);
+		case Expr::INDEX: return resolve_expr_index(expr);
 		case Expr::UNARY: return resolve_expr_unary(expr);
 		case Expr::BINARY: return resolve_expr_binary(expr);
+		case Expr::TERNARY: return resolve_expr_ternary(expr, expected_type);
+		case Expr::CALL: return resolve_expr_call(expr);
 		case Expr::SIZEOF_EXPR:
 		{
-			ResolvedExpr result = resolve_expr(expr->sizeof_expr);
+			ResolvedExpr result = resolve_expr(expr->sizeof_expr, nullptr);
 			Type *type = result.type;
 			complete_type(type);
 			return resolved_const(type_sizeof(type));
@@ -452,7 +538,7 @@ namespace Ion
 	}
 	int64_t resolve_int_const_expr(Expr *expr)
 	{
-		ResolvedExpr result{ resolve_expr(expr) };
+		ResolvedExpr result{ resolve_expr(expr, nullptr) };
 		if (!result.is_const) {
 			fatal("Expected constant expression");
 		}
@@ -481,13 +567,18 @@ namespace Ion
 		const char *int_name = str_intern("int");
 		entity_install_type(int_name, type_int);
 		const char *code[] = {
+			"var i = 42",
+			"const k = 1 ? i : 3",
 			"struct Vector{ x, y: int; }",
-			"var v = Vector{1, 2}",
+			"func add(v: Vector, w: Vector): Vector { return {v.x + w.x, v.y + w.y}; }",
+			"var v = add({1, 2}, {3, 4})",
+			/*"var a: int[3] = {1,2,3}",
+			"var v: Vector = {1, 2}",
+			"var w = Vector{3, 4}",
 			"union IntOrPtr{ i: int; p: int*; } ",
 			"var i = 42",
 			"var u = IntOrPtr{i, &i}",
-			"var a: int[3] = {1,2,3}",
-			/*"const n = 1+sizeof(p)",
+			"const n = 1+sizeof(p)",
 			"var p: T*",
 			"var u = *p",
 			"struct T { a: int[n]; }",
@@ -497,10 +588,10 @@ namespace Ion
 			"const m = sizeof(t.a)",
 			"var i = n+m",
 			"var q = &i",*/
-			//        "const n = sizeof(x)",
-			//        "var x: T",
-			//        "struct T { s: S*; }",
-			//        "struct S { t: T[n]; }",
+			// "const n = sizeof(x)",
+			// "var x: T",
+			// "struct T { s: S*; }",
+			// "struct S { t: T[n]; }",
 		};
 		for (size_t i = 0; i < sizeof(code) / sizeof(*code); ++i)
 		{
@@ -519,5 +610,6 @@ namespace Ion
 			{ printf("%s", it->name); }
 			printf("\n");
 		}
+
 	}
 }

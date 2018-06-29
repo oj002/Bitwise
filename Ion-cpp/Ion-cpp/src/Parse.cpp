@@ -80,7 +80,7 @@ namespace Ion
 		expect_token(Token::RBRACE);
 		return expr_compound(type, args);
 	}
-	Expr *parse_expr_operand()
+	Expr *parse_expr_operand() // TODO in here https://github.com/pervognsen/bitwise/blob/f50ec777cc2f232fea919c353ee06ee896ffc0ab/ion/parse.c
 	{
 		if (is_token(Token::INT))
 		{
@@ -107,18 +107,25 @@ namespace Ion
 			if (is_token(Token::LBRACE)) { return parse_expr_compound(typespec_name(name)); }
 			else { return expr_name(name); }
 		}
+		else if (match_keyword(case_keyword))
+		{
+			expect_token(Token::LPAREN);
+			Typespec *type{ parse_type() };
+			expect_token(Token::RPAREN);
+			return expr_cast(type, parse_expr());
+		}
 		else if (match_keyword(sizeof_keyword))
 		{
 			expect_token(Token::LPAREN);
 			if (match_token(Token::COLON))
 			{
-				Typespec *type = parse_type();
+				Typespec *type{ parse_type() };
 				expect_token(Token::RPAREN);
 				return expr_sizeof(type);
 			}
 			else
 			{
-				Expr *expr = parse_expr();
+				Expr *expr{ parse_expr() };
 				expect_token(Token::RPAREN);
 				return expr_sizeof(expr);
 			}
@@ -126,15 +133,15 @@ namespace Ion
 		else if (is_token(Token::LBRACE)) { return parse_expr_compound(nullptr); }
 		else if (match_token(Token::LPAREN))
 		{
-			if (is_token(Token::COLON))
+			if (match_token(Token::COLON))
 			{
-				Typespec *type = parse_type();
+				Typespec *type{ parse_type() };
 				expect_token(Token::RPAREN);
 				return parse_expr_compound(type);
 			}
 			else
 			{
-				Expr *expr = parse_expr();
+				Expr *expr{ parse_expr() };
 				expect_token(Token::RPAREN);
 				return expr;
 			}
@@ -535,7 +542,7 @@ namespace Ion
 		if (match_keyword(enum_keyword)) { return parse_decl_enum(); }
 		else if (match_keyword(struct_keyword)) { return parse_decl_aggregate(Decl::STRUCT); }
 		else if (match_keyword(union_keyword)) { return parse_decl_aggregate(Decl::UNION); }
-		else if (match_keyword(var_keyword)) { return parse_decl_var(); }
+		else if (match_keyword(var_keyword)) { return parse_decl_var();}
 		else if (match_keyword(const_keyword)) { return parse_decl_const(); }
 		else if (match_keyword(typedef_keyword)) { return parse_decl_typedef(); }
 		else if (match_keyword(func_keyword)) { return parse_decl_func(); }

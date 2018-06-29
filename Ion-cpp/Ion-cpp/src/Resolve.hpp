@@ -146,7 +146,7 @@ namespace Ion
 
 	Entity *resolve_name(const char *name);
 	int64_t resolve_int_const_expr(Expr *expr);
-	ResolvedExpr resolve_expr(Expr *expr);
+	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type);
 
 	Type *resolve_typespec(Typespec *typespec);
 
@@ -156,6 +156,7 @@ namespace Ion
 	Type *resolve_decl_type(Decl *decl);
 	Type *resolve_decl_var(Decl *decl);
 	Type *resolve_decl_const(Decl *decl, int64_t *val);
+	Type *resolve_decl_func(Decl *decl);
 	void resolve_entity(Entity *entity);
 	void complete_entity(Entity *entity);
 
@@ -164,8 +165,11 @@ namespace Ion
 	ResolvedExpr resolve_expr_name(Expr *expr);
 	ResolvedExpr resolve_expr_unary(Expr *expr);
 	ResolvedExpr resolve_expr_binary(Expr *expr);
-	ResolvedExpr resolve_expr_compound(Expr *expr);
-	ResolvedExpr resolve_expr(Expr *expr);
+	ResolvedExpr resolve_expr_compound(Expr *expr, Type *expected_type);
+	ResolvedExpr resolve_expr_call(Expr *expr);
+	ResolvedExpr resolve_expr_ternary(Expr *expr, Type *expected_type);
+	ResolvedExpr resolve_expr_index(Expr *expr);
+	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type);
 	int64_t resolve_int_const_expr(Expr *expr);
 	void resolve_test();
 }
