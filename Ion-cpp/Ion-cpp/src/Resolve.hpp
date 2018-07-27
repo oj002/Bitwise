@@ -146,7 +146,7 @@ namespace Ion
 
 	Entity *resolve_name(const char *name);
 	int64_t resolve_int_const_expr(Expr *expr);
-	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type);
+	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type = nullptr);
 
 	Type *resolve_typespec(Typespec *typespec);
 
@@ -163,6 +163,7 @@ namespace Ion
 	Entity *resolve_name(const char *name);
 	ResolvedExpr resolve_expr_field(Expr *expr);
 	ResolvedExpr resolve_expr_name(Expr *expr);
+	int64_t eval_unary(Token::Kind op, int64_t val);
 	ResolvedExpr resolve_expr_unary(Expr *expr);
 	ResolvedExpr resolve_expr_binary(Expr *expr);
 	ResolvedExpr resolve_expr_compound(Expr *expr, Type *expected_type);
