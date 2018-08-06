@@ -360,7 +360,7 @@ namespace Ion
 
 	int64_t eval_int_unary(Token::Kind op, int64_t val)
 	{
-		switch (op)
+		switch (op) 
 		{
 		case Token::ADD: return +val;
 		case Token::SUB: return -val;
@@ -398,13 +398,37 @@ namespace Ion
 	{
 		switch (op)
 		{
-		case Token::MUL: return left * right;
-		case Token::DIV:
-		case Token::AND: return left & right;
-		case Token::ADD: return left + right;
-		case Token::SUB: return left - right;
-		case Token::OR:  return left | right;
-		case Token::XOR: return left ^ right;
+		case Token::MUL:	return left * right;
+		case Token::DIV: {
+			if (right == 0) {
+				return 0;
+			}
+			else {
+				return left / right;
+			}
+		}
+		case Token::MOD: {
+			if (right == 0) {
+				return 0;
+			}
+			else {
+				return left % right;
+			}
+		}
+		case Token::AND:	return left & right;
+		case Token::LSHIFT:	return left << right;
+		case Token::RSHIFT:	return left >> right;
+		case Token::ADD:	return left + right;
+		case Token::SUB:	return left - right;
+		case Token::OR:		return left | right;
+		case Token::XOR:	return left ^ right;
+		case Token::EQ:		return left == right;
+		case Token::NOTEQ:	return left != right;
+		case Token::LT:		return left < right;
+		case Token::LTEQ:	return left <= right;
+		case Token::GT:		return left > right;
+		case Token::GTEQ:	return left >= right;
+		default: assert(0); return 0;
 		}
 	}
 	ResolvedExpr resolve_expr_binary(Expr *expr)

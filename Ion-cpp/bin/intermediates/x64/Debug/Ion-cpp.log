@@ -1,6 +1,6 @@
 ﻿  Resolve.cpp
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
-c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
-  Ion-cpp.vcxproj -> C:\dev\projects\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe
+c:\dev\bitwise\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
+c:\dev\bitwise\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
+c:\dev\bitwise\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
+c:\dev\bitwise\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
+  Ion-cpp.vcxproj -> C:\dev\Bitwise\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe
