@@ -364,6 +364,35 @@ namespace Ion
 		{
 		case Token::ADD: return +val;
 		case Token::SUB: return -val;
+		case Token::NEG: return ~val;
+		case Token::NOT: return !val;
+		default: assert(0); return 0;
+		}
+	}
+	int64_t eval_int_binary(Token::Kind op, int64_t left, int64_t right)
+	{
+		switch (op)
+		{
+		case Token::MUL:	return left * right;
+		case Token::DIV:	return right == 0 ? 0 : left / right;
+		case Token::MOD:	return right == 0 ? 0 : left % right;
+		case Token::AND:	return left & right;
+			// TODO: Don't allow UB in shifts, etc
+		case Token::LSHIFT:	return left << right;
+		case Token::RSHIFT:	return left >> right;
+		case Token::ADD:	return left + right;
+		case Token::SUB:	return left - right;
+		case Token::OR:		return left | right;
+		case Token::XOR:	return left ^ right;
+		case Token::EQ:		return left == right;
+		case Token::NOTEQ:	return left != right;
+		case Token::LT:		return left < right;
+		case Token::LTEQ:	return left <= right;
+		case Token::GT:		return left > right;
+		case Token::GTEQ:	return left >= right;
+			// TODO: Probably handle logical AND/OR separately 
+		case Token::AND_AND:return left && right;
+		case Token::OR_OR:	return left || right;
 		default: assert(0); return 0;
 		}
 	}
@@ -394,47 +423,9 @@ namespace Ion
 			else { return resolved_rvalue(type); }
 		}
 	}
-	int64_t eval_int_binary(Token::Kind op, int64_t left, int64_t right)
-	{
-		switch (op)
-		{
-		case Token::MUL:	return left * right;
-		case Token::DIV: {
-			if (right == 0) {
-				return 0;
-			}
-			else {
-				return left / right;
-			}
-		}
-		case Token::MOD: {
-			if (right == 0) {
-				return 0;
-			}
-			else {
-				return left % right;
-			}
-		}
-		case Token::AND:	return left & right;
-		case Token::LSHIFT:	return left << right;
-		case Token::RSHIFT:	return left >> right;
-		case Token::ADD:	return left + right;
-		case Token::SUB:	return left - right;
-		case Token::OR:		return left | right;
-		case Token::XOR:	return left ^ right;
-		case Token::EQ:		return left == right;
-		case Token::NOTEQ:	return left != right;
-		case Token::LT:		return left < right;
-		case Token::LTEQ:	return left <= right;
-		case Token::GT:		return left > right;
-		case Token::GTEQ:	return left >= right;
-		default: assert(0); return 0;
-		}
-	}
 	ResolvedExpr resolve_expr_binary(Expr *expr)
 	{
 		assert(expr->kind == Expr::BINARY);
-		assert(expr->binary.op == Token::ADD);
 		ResolvedExpr left = resolve_expr(expr->binary.left);
 		ResolvedExpr right = resolve_expr(expr->binary.right);
 		if (left.type != type_int) {
@@ -444,7 +435,7 @@ namespace Ion
 			fatal("left and right operand of + must have same type");
 		}
 		if (left.is_const && right.is_const) {
-			return resolved_const(left.val + right.val);
+			return resolved_const(eval_int_binary(expr->binary.op, left.val, right.val));
 		}
 		else {
 			return resolved_rvalue(left.type);
@@ -578,11 +569,21 @@ namespace Ion
 			return resolved_lvalue(operand.type->array.elem);
 		}
 	}
+	ResolvedExpr reslove_expr_cast(Expr *expr)
+	{
+		assert(expr->kind == Expr::CAST);
+		Type *type{ resolve_typespec(expr->cast.type) };
+		ResolvedExpr result = resolve_expr(expr->cast.expr);
+		if (type->kind == Type::PTR)
+			if (result.type->kind != Type::PTR && result.type->kind != Type::INT)
+				fatal("invalid cast to pointer type");
+	}
 	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type)
 	{
 		switch (expr->kind) {
 		case Expr::INT: return resolved_const(expr->int_val);
 		case Expr::NAME: return resolve_expr_name(expr);
+		case Expr::CAST: return reslove_expr_cast(expr);
 		case Expr::COMPOUND: return resolve_expr_compound(expr, expected_type);
 		case Expr::FIELD: return resolve_expr_field(expr);
 		case Expr::INDEX: return resolve_expr_index(expr);
@@ -640,6 +641,9 @@ namespace Ion
 			"const i = 42",
 			"const j = +i",
 			"const k = -i",
+			"const a = 1000/((2*3-5) << 1)",
+			"const b = !0",
+			"const c = ~100 + 1 == -100",
 			/*"const k = 1 ? 2 : 3",
 			"struct Vector{ x, y: int; }",
 			"func add(v: Vector, w: Vector): Vector { return {v.x + w.x, v.y + w.y}; }",
@@ -685,6 +689,6 @@ namespace Ion
 			{ printf("%s", it->name); }
 			printf("\n");
 		}
-
+		;
  	}
 }

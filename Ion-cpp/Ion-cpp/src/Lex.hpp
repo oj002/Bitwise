@@ -53,6 +53,8 @@ namespace Ion
 			FLOAT,
 			STR,
 			NAME,
+			NEG,
+			NOT,
 			// Multiplicative precedence
 			MUL,
 			FIRST_MUL = MUL,

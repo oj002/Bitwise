@@ -189,7 +189,7 @@ namespace Ion
 	}
 	bool is_unary_op()
 	{
-		return is_token(Token::ADD) || is_token(Token::SUB) || is_token(Token::MUL) || is_token(Token::AND);
+		return is_token(Token::ADD) || is_token(Token::SUB) || is_token(Token::MUL) || is_token(Token::AND) || is_token(Token::NEG) || is_token(Token::NOT);
 	}
 	Expr *parse_expr_unary()
 	{

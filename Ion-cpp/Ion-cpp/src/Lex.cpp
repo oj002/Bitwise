@@ -91,6 +91,8 @@ namespace Ion
 		case Token::FLOAT: return "float";
 		case Token::STR: return "string";
 		case Token::NAME: return "name";
+		case Token::NEG: return "~";
+		case Token::NOT: return "!";
 		case Token::MUL: return "*";
 		case Token::DIV: return "/";
 		case Token::MOD: return "%";
@@ -408,6 +410,8 @@ namespace Ion
 		CASE1(',', COMMA);
 		CASE1('?', QUESTION);
 		CASE1(';', SEMICOLON);
+		CASE1('~', NEG);
+		CASE1('!', NOT);
 		CASE2(':', COLON, '=', COLON_ASSIGN);
 		CASE2('=', ASSIGN, '=', EQ);
 		CASE2('^', XOR, '=', XOR_ASSIGN);
