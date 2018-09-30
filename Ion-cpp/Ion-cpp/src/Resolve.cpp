@@ -9,8 +9,13 @@ namespace Ion
 		return t;
 	}
 
+	Type type_void_val{ Type::VOID, 0 };
+	Type type_char_val{ Type::CHAR, 1 };
 	Type type_int_val{ Type::INT, 4 };
 	Type type_float_val{ Type::FLOAT, 4 };
+
+	Type *type_void{ &type_void_val };
+	Type *type_char{ &type_char_val };
 	Type *type_int{ &type_int_val };
 	Type *type_float{ &type_float_val };
 	const size_t PTR_SIZE{ 8 };
@@ -193,7 +198,7 @@ namespace Ion
 			return entity->type;
 		}
 		case Typespec::PTR: return type_ptr(resolve_typespec(typespec->ptr.elem));
-		case Typespec::ARRAY: return type_array(resolve_typespec(typespec->array.elem), resolve_int_const_expr(typespec->array.size));
+		case Typespec::ARRAY: return type_array(resolve_typespec(typespec->array.elem), resolve_const_expr(typespec->array.size));
 		case Typespec::FUNC:
 		{
 			std::vector<Type *> args;
@@ -343,6 +348,13 @@ namespace Ion
 		fatal("No field named '%s'", expr->field.name);
 		return resolved_null;
 	}
+	ResolvedExpr ptr_decay(ResolvedExpr expr)
+	{
+		if (expr.type->kind == Type::ARRAY)
+			return resolved_rvalue(type_ptr(expr.type->array.elem));
+		else
+			return expr;
+	}
 	ResolvedExpr resolve_expr_name(Expr *expr)
 	{
 		assert(expr->kind == Expr::NAME);
@@ -405,6 +417,7 @@ namespace Ion
 		switch (expr->unary.op) 
 		{
 		case Token::MUL:
+			operand = ptr_decay(operand);
 			if (type->kind != Type::PTR) {
 				fatal("Cannot deref non-ptr type");
 			}
@@ -528,14 +541,14 @@ namespace Ion
 	ResolvedExpr resolve_expr_ternary(Expr *expr, Type *expected_type)
 	{
 		assert(expr->kind == Expr::TERNARY);
-		ResolvedExpr cond{ resolve_expr(expr->ternary.cond) };
+		ResolvedExpr cond{ ptr_decay(resolve_expr(expr->ternary.cond)) };
 		
 		if (cond.type->kind != Type::INT && cond.type->kind != Type::PTR)
 		{
 			fatal("Ternary cond expression must have type int or ptr");
 		}
-		ResolvedExpr then_expr = resolve_expr(expr->ternary.then_expr, expected_type);
-		ResolvedExpr else_expr = resolve_expr(expr->ternary.else_expr, expected_type);
+		ResolvedExpr then_expr = ptr_decay(resolve_expr(expr->ternary.then_expr, expected_type));
+		ResolvedExpr else_expr = ptr_decay(resolve_expr(expr->ternary.else_expr, expected_type));
 		if (then_expr.type != else_expr.type)
 		{
 			fatal("Ternary then/else expr must have matching types");
@@ -549,25 +562,14 @@ namespace Ion
 	ResolvedExpr resolve_expr_index(Expr *expr)
 	{
 		assert(expr->kind == Expr::INDEX);
-		ResolvedExpr operand{ resolve_expr(expr->index.expr) };
-		ResolvedExpr index{ resolve_expr(expr->index.index) };
-		if (operand.type->kind != Type::PTR && operand.type->kind != Type::ARRAY)
-		{
+		ResolvedExpr operand{ ptr_decay(resolve_expr(expr->index.expr)) };
+		if (operand.type->kind != Type::PTR)
 			fatal("Can only index arrays or pointers");
-		}
+		ResolvedExpr index{ resolve_expr(expr->index.index) };
 		if (index.type->kind != Type::INT)
-		{
 			fatal("Index expressions must have type int");
-		}
-		if (operand.type->kind == Type::PTR)
-		{
-			return resolved_lvalue(operand.type->ptr.elem);
-		}
-		else
-		{
-			assert(operand.type->kind == Type::ARRAY);
-			return resolved_lvalue(operand.type->array.elem);
-		}
+
+		return resolved_lvalue(operand.type->ptr.elem);
 	}
 	ResolvedExpr reslove_expr_cast(Expr *expr)
 	{
@@ -575,13 +577,26 @@ namespace Ion
 		Type *type{ resolve_typespec(expr->cast.type) };
 		ResolvedExpr result = resolve_expr(expr->cast.expr);
 		if (type->kind == Type::PTR)
+		{
 			if (result.type->kind != Type::PTR && result.type->kind != Type::INT)
 				fatal("invalid cast to pointer type");
+		}
+		else if (type->kind = Type::INT)
+		{
+			if (result.type->kind != Type::PTR && result.type->kind != Type::INCOMPLETE)
+				fatal("Invalid cast to int type");	 
+		}
+		else
+			fatal("Invalid target cast type");
+		
+		return resolved_rvalue(type);
 	}
 	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type)
 	{
 		switch (expr->kind) {
 		case Expr::INT: return resolved_const(expr->int_val);
+		case Expr::FLOAT: return resolved_rvalue(type_float);
+		case Expr::STR: return resolved_rvalue(type_ptr(type_char));
 		case Expr::NAME: return resolve_expr_name(expr);
 		case Expr::CAST: return reslove_expr_cast(expr);
 		case Expr::COMPOUND: return resolve_expr_compound(expr, expected_type);
@@ -607,7 +622,7 @@ namespace Ion
 		default: assert(0); return resolved_null;
 		}
 	}
-	int64_t resolve_int_const_expr(Expr *expr)
+	int64_t resolve_const_expr(Expr *expr)
 	{
 		ResolvedExpr result{ resolve_expr(expr) };
 		if (!result.is_const) {
@@ -635,17 +650,32 @@ namespace Ion
 		assert(int_int_func != int_func);
 		assert(int_func == type_func(std::vector<Type*>(0), type_int));
 
-		const char *int_name = str_intern("int");
-		entity_install_type(int_name, type_int);
+		entity_install_type(str_intern("int"), type_int);
+		entity_install_type(str_intern("void"), type_void);
 		const char *code[] = {
+			"var a: int[3] = {1,2,3}",
+			"var b: int[4]",
+			"var p = &a[1]",
+			"var i = p[1]",
+			"var j = *p",
+			"const n = sizeof(a)",
+			"const m = sizeof(&a[0])",
+			"const l = sizeof(1 ? a : b)",
+			
+			/*"var pi = 3.14",
+			"var name = \"pleb\""
+			"struct Vector{ x, y: int; }",
+			"var i = 42",
+			"var p = cast(void*)i",
+			"var j = cast(int)p",
+			"var q = cast(int*)j",
 			"const i = 42",
 			"const j = +i",
 			"const k = -i",
 			"const a = 1000/((2*3-5) << 1)",
 			"const b = !0",
 			"const c = ~100 + 1 == -100",
-			/*"const k = 1 ? 2 : 3",
-			"struct Vector{ x, y: int; }",
+			"const k = 1 ? 2 : 3",
 			"func add(v: Vector, w: Vector): Vector { return {v.x + w.x, v.y + w.y}; }",
 			"var x = add({1, 2}, {3, 4})",
 			"var a: int[3] = {1,2,3}",

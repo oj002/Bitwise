@@ -11,6 +11,7 @@ namespace Ion
 	extern const char *var_keyword;
 	extern const char *const_keyword;
 	extern const char *func_keyword;
+	extern const char *cast_keyword;
 	extern const char *sizeof_keyword;
 	extern const char *break_keyword;
 	extern const char *continue_keyword;

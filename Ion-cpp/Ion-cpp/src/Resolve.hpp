@@ -15,6 +15,7 @@ namespace Ion
 		{
 			NONE,
 			INCOMPLETE, COMPLETING,
+			VOID, CHAR,
 			INT, FLOAT, PTR,
 			ARRAY, STRUCT, UNION,
 			ENUM, FUNC,
@@ -54,8 +55,13 @@ namespace Ion
 
 	Type *type_alloc(Type::Kind kind);
 
+	extern Type type_void_val;
+	extern Type type_char_val;
 	extern Type type_int_val;
 	extern Type type_float_val;
+
+	extern Type *type_void;
+	extern Type *type_char;
 	extern Type *type_int;
 	extern Type *type_float;
 	extern const size_t PTR_SIZE;
@@ -162,6 +168,7 @@ namespace Ion
 
 	Entity *resolve_name(const char *name);
 	ResolvedExpr resolve_expr_field(Expr *expr);
+	ResolvedExpr ptr_decay(ResolvedExpr expr);
 	ResolvedExpr resolve_expr_name(Expr *expr);
 	int64_t eval_int_unary(Token::Kind op, int64_t val);
 	int64_t eval_int_binary(Token::Kind op, int64_t left, int64_t right);
@@ -172,6 +179,6 @@ namespace Ion
 	ResolvedExpr resolve_expr_ternary(Expr *expr, Type *expected_type);
 	ResolvedExpr resolve_expr_index(Expr *expr);
 	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type);
-	int64_t resolve_int_const_expr(Expr *expr);
+	int64_t resolve_const_expr(Expr *expr);
 	void resolve_test();
 }

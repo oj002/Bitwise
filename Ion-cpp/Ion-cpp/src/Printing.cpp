@@ -64,7 +64,7 @@ namespace Ion
 			}
 			std::printf(")"); break;
 		case Expr::INDEX:
-			std::printf("(index"); print_expr(e->index.expr);
+			std::printf("(index "); print_expr(e->index.expr);
 			std::printf(" "); print_expr(e->index.index);
 			std::printf(")"); break;
 		case Expr::FIELD:

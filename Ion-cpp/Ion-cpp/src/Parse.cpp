@@ -80,7 +80,7 @@ namespace Ion
 		expect_token(Token::RBRACE);
 		return expr_compound(type, args);
 	}
-	Expr *parse_expr_operand() // TODO in here https://github.com/pervognsen/bitwise/blob/f50ec777cc2f232fea919c353ee06ee896ffc0ab/ion/parse.c
+	Expr *parse_expr_operand()
 	{
 		if (is_token(Token::INT))
 		{
@@ -111,6 +111,13 @@ namespace Ion
 		{
 			expect_token(Token::LPAREN);
 			Typespec *type{ parse_type() };
+			expect_token(Token::RPAREN);
+			return expr_cast(type, parse_expr());
+		}
+		else if (match_keyword(cast_keyword))
+		{
+			expect_token(Token::LPAREN);
+			Typespec *type = parse_type();
 			expect_token(Token::RPAREN);
 			return expr_cast(type, parse_expr());
 		}
