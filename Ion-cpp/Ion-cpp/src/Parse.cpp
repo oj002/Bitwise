@@ -10,16 +10,12 @@ namespace Ion
 		{
 			args.push_back(parse_type());
 			while (match_token(Token::COMMA))
-			{
 				args.push_back(parse_type());
-			}
 		}
 		expect_token(Token::LPAREN);
 		Typespec *ret{ nullptr };
 		if (match_token(Token::COLON))
-		{
 			ret = parse_type();
-		}
 		return typespec_func(args, ret);
 	}
 	Typespec *parse_type_base()
@@ -30,7 +26,8 @@ namespace Ion
 			next_token();
 			return typespec_name(name);
 		}
-		else if (match_keyword(func_keyword)) { return parse_type_func(); }
+		else if (match_keyword(func_keyword))
+			return parse_type_func();
 		else if (match_token(Token::LPAREN))
 		{
 			Typespec *type{ parse_type() };
@@ -39,7 +36,7 @@ namespace Ion
 		}
 		else
 		{
-			fatal_syntax_error("Unexpected token %s in type", token_kind_name(token.kind));
+			fatal_syntax_error("Unexpected token %s in type", token_info());
 			return nullptr;
 		}
 	}
@@ -51,7 +48,7 @@ namespace Ion
 			if (match_token(Token::LBRACKET))
 			{
 				Expr *expr{ nullptr };
-				if (!is_token(Token::RBRACKET)) { expr = parse_expr(); }
+				if (!is_token(Token::RBRACKET)) expr = parse_expr();
 				expect_token(Token::RBRACKET);
 				type = typespec_array(type, expr);
 			}
@@ -65,21 +62,51 @@ namespace Ion
 		return type;
 	}
 
+	CompoundField parse_expr_compound_field()
+	{
+		if (match_token(Token::LBRACKET))
+		{
+			Expr *index = parse_expr();
+			expect_token(Token::RBRACKET);
+			expect_token(Token::ASSIGN);
+			CompoundField f;
+			f.kind = CompoundField::INDEX;
+			f.init = parse_expr();
+			f.index = index;
+			return f;
+		}
+		else
+		{
+			Expr *expr = parse_expr();
+			if (match_token(Token::ASSIGN))
+			{
+				if (expr->kind != Expr::NAME) 
+					fatal_syntax_error("Named initializer in compound literal must be preceded by field name");
+				CompoundField f;
+				f.kind = CompoundField::NAME;
+				f.init = parse_expr();
+				f.name = expr->name;
+				return f;
+			}
+			else
+				return { CompoundField::DEFAULT, expr };
+		}
+	}
+
 	Expr *parse_expr_compound(Typespec *type)
 	{
 		expect_token(Token::LBRACE);
-		std::vector<Expr*> args;
+		std::vector<CompoundField> fields;
 		if (!is_token(Token::RBRACE))
 		{
-			args.push_back(parse_expr());
+			fields.push_back(parse_expr_compound_field());
 			while (match_token(Token::COMMA))
-			{
-				args.push_back(parse_expr());
-			}
+				fields.push_back(parse_expr_compound_field());
 		}
 		expect_token(Token::RBRACE);
-		return expr_compound(type, args);
+		return expr_compound(type, fields);
 	}
+	
 	Expr *parse_expr_operand()
 	{
 		if (is_token(Token::INT))
@@ -104,22 +131,17 @@ namespace Ion
 		{
 			const char *name{ token.name };
 			next_token();
-			if (is_token(Token::LBRACE)) { return parse_expr_compound(typespec_name(name)); }
-			else { return expr_name(name); }
-		}
-		else if (match_keyword(case_keyword))
-		{
-			expect_token(Token::LPAREN);
-			Typespec *type{ parse_type() };
-			expect_token(Token::RPAREN);
-			return expr_cast(type, parse_expr());
+			if (is_token(Token::LBRACE)) return parse_expr_compound(typespec_name(name));
+			else return expr_name(name);
 		}
 		else if (match_keyword(cast_keyword))
 		{
 			expect_token(Token::LPAREN);
 			Typespec *type = parse_type();
+			expect_token(Token::COMMA);
+			Expr *expr = parse_expr();
 			expect_token(Token::RPAREN);
-			return expr_cast(type, parse_expr());
+			return expr_cast(type, expr);
 		}
 		else if (match_keyword(sizeof_keyword))
 		{
@@ -170,9 +192,7 @@ namespace Ion
 				{
 					args.push_back(parse_expr());
 					while (match_token(Token::COMMA))
-					{
 						args.push_back(parse_expr());
-					}
 				}
 				expect_token(Token::RPAREN);
 				expr = expr_call(expr, args);
@@ -206,7 +226,7 @@ namespace Ion
 			next_token();
 			return expr_unary(op, parse_expr_unary());
 		}
-		else { return parse_expr_base(); }
+		else return parse_expr_base();
 	}
 	bool is_mul_op()
 	{
@@ -257,18 +277,14 @@ namespace Ion
 	{
 		Expr *expr{ parse_expr_cmp() };
 		while (match_token(Token::AND))
-		{
 			expr = expr_binary(Token::AND, expr, parse_expr_cmp());
-		}
 		return expr;
 	}
 	Expr *parse_expr_or()
 	{
 		Expr *expr{ parse_expr_and() };
 		while (match_token(Token::OR))
-		{
 			expr = expr_binary(Token::OR, expr, parse_expr_and());
-		}
 		return expr;
 	}
 	Expr *parse_expr_ternary()
@@ -291,22 +307,20 @@ namespace Ion
 		expect_token(Token::RPAREN);
 		return expr;
 	}
-	StmtBlock parse_stmt_block()
+	StmtList parse_stmt_block()
 	{
 		expect_token(Token::LBRACE);
 		std::vector<Stmt*> stmts;
 		while (!is_token(Token::END_OF_FILE) && !is_token(Token::RBRACE))
-		{
 			stmts.push_back(parse_stmt());
-		}
 		expect_token(Token::RBRACE);
-		return StmtBlock{ stmts };
+		return StmtList{ stmts };
 	}
 	Stmt *parse_stmt_if()
 	{
 		Expr *cond{ parse_paren_expr() };
-		StmtBlock then_block{ parse_stmt_block() };
-		StmtBlock else_block{ { 0 } };
+		StmtList then_block{ parse_stmt_block() };
+		StmtList else_block{ { 0 } };
 		std::vector<ElseIf> elseifs;
 		while (match_keyword(else_keyword))
 		{
@@ -316,7 +330,7 @@ namespace Ion
 				break;
 			}
 			Expr *elseif_cond = parse_paren_expr();
-			StmtBlock elseif_block = parse_stmt_block();
+			StmtList elseif_block = parse_stmt_block();
 			elseifs.push_back({ elseif_cond, elseif_block });
 		}
 		return stmt_if(cond, then_block, elseifs, else_block);
@@ -330,7 +344,7 @@ namespace Ion
 
 	Stmt *parse_stmt_do_while()
 	{
-		StmtBlock block{ parse_stmt_block() };
+		StmtList block{ parse_stmt_block() };
 		if (!match_keyword(while_keyword))
 		{
 			fatal_syntax_error("Expected 'while' after 'do' block");
@@ -350,7 +364,7 @@ namespace Ion
 		Stmt *stmt;
 		if (match_token(Token::COLON_ASSIGN))
 		{
-			if (expr->kind != Expr::NAME) { fatal_syntax_error(":= must be preceded by a name"); }
+			if (expr->kind != Expr::NAME) fatal_syntax_error(":= must be preceded by a name");
 			stmt = stmt_init(expr->name, parse_expr());
 		}
 		else if (is_assign_op())
@@ -365,20 +379,25 @@ namespace Ion
 			next_token();
 			stmt = stmt_assign(op, expr, nullptr);
 		}
-		else { stmt = stmt_expr(expr); }
+		else stmt = stmt_expr(expr);
 		return stmt;
 	}
 	Stmt *parse_stmt_for()
 	{
 		expect_token(Token::LPAREN);
 		Stmt *init{ nullptr };
-		if (!is_token(Token::SEMICOLON)) { init = parse_simple_stmt(); }
+		if (!is_token(Token::SEMICOLON)) init = parse_simple_stmt();
 		expect_token(Token::SEMICOLON);
 		Expr *cond{ nullptr };
-		if (!is_token(Token::SEMICOLON)) { cond = parse_expr(); }
+		if (!is_token(Token::SEMICOLON)) cond = parse_expr();
 		expect_token(Token::SEMICOLON);
 		Stmt *next{ nullptr };
-		if (!is_token(Token::RPAREN)) { next = parse_simple_stmt(); }
+		if (!is_token(Token::RPAREN))
+		{
+			next = parse_simple_stmt();
+			if (next->kind == Stmt::INIT)
+				syntax_error("Init statements not allowed in for-statement's next clause");
+		}
 		expect_token(Token::RPAREN);
 		return stmt_for(init, cond, next, parse_stmt_block());
 	}
@@ -389,18 +408,22 @@ namespace Ion
 		while (is_keyword(case_keyword) || is_keyword(default_keyword))
 		{
 			if (match_keyword(case_keyword))
-			{
 				exprs.push_back(parse_expr());
-				expect_token(Token::COLON);
-			}
 			else
 			{
 				assert(is_keyword(default_keyword));
 				next_token();
+				if (is_default)
+					syntax_error("Duplicate default labels in same switch clause");
 				is_default = true;
 			}
+			expect_token(Token::COLON);
 		}
-		return SwitchCase{ exprs, is_default, parse_stmt_block() };
+		std::vector<Stmt*>stmts;
+		while (!is_token(Token::END_OF_FILE) && !is_token(Token::RBRACE) && !is_keyword(case_keyword) && !is_keyword(default_keyword))
+			stmts.push_back(parse_stmt());
+		
+		return SwitchCase{ exprs, is_default, { stmts } };
 	}
 	Stmt *parse_stmt_switch()
 	{
@@ -408,31 +431,47 @@ namespace Ion
 		std::vector<SwitchCase> cases;
 		expect_token(Token::LBRACE);
 		while (!is_token(Token::END_OF_FILE) && !is_token(Token::RBRACE))
-		{
 			cases.push_back(parse_stmt_switch_case());
-		}
 		expect_token(Token::RBRACE);
 		return stmt_switch(expr, cases);
 	}
 	Stmt *parse_stmt()
 	{
-		if (is_token(Token::LBRACE)) { return stmt_block(parse_stmt_block()); }
+		if (match_keyword(if_keyword))
+			return parse_stmt_if();
+		else if (match_keyword(while_keyword))
+			return parse_stmt_while();
+		else if (match_keyword(do_keyword))
+			return parse_stmt_do_while();
+		else if (match_keyword(for_keyword))
+			return parse_stmt_for();
+		else if (match_keyword(switch_keyword))
+			return parse_stmt_switch();
+		else if (is_token(Token::LBRACE))
+			return stmt_block(parse_stmt_block());
+		else if (match_keyword(break_keyword))
+		{
+			expect_token(Token::SEMICOLON);
+			return stmt_break();
+		}
+		else if (match_keyword(continue_keyword))
+		{
+			expect_token(Token::SEMICOLON);
+			return stmt_continue();
+		}
 		else if (match_keyword(return_keyword))
 		{
-			Stmt *stmt{ stmt_return(parse_expr()) };
+			Expr *expr = NULL;
+			if (!is_token(Token::SEMICOLON))
+				expr = parse_expr();
 			expect_token(Token::SEMICOLON);
-			return stmt;
+			return stmt_return(expr);
 		}
-		else if (match_keyword(break_keyword)) { expect_token(Token::SEMICOLON); return stmt_break(); }
-		else if (match_keyword(continue_keyword)) { expect_token(Token::SEMICOLON); return stmt_continue(); }
-		else if (match_keyword(if_keyword)) { return parse_stmt_if(); }
-		else if (match_keyword(while_keyword)) { return parse_stmt_while(); }
-		else if (match_keyword(do_keyword)) { return parse_stmt_do_while(); }
-		else if (match_keyword(for_keyword)) { return parse_stmt_for(); }
-		else if (match_keyword(switch_keyword)) { return parse_stmt_switch(); }
 		else
 		{
-			Stmt *stmt{ parse_simple_stmt() };
+			Decl *decl = parse_decl_opt();
+			if (decl) return stmt_decl(decl);
+			Stmt *stmt = parse_simple_stmt();
 			expect_token(Token::SEMICOLON);
 			return stmt;
 		}
@@ -449,9 +488,7 @@ namespace Ion
 		const char *name{ parse_name() };
 		Expr *init{ nullptr };
 		if (match_token(Token::ASSIGN))
-		{
 			init = parse_expr();
-		}
 		return { name, init };
 	}
 	Decl *parse_decl_enum()
@@ -463,9 +500,7 @@ namespace Ion
 		{
 			items.push_back(parse_decl_enum_item());
 			while (match_token(Token::COMMA))
-			{
 				items.push_back(parse_decl_enum_item());
-			}
 		}
 		expect_token(Token::RBRACE);
 		return decl_enum(name, items);
@@ -474,7 +509,8 @@ namespace Ion
 	{
 		std::vector<const char *> names;
 		names.push_back(parse_name());
-		while (match_token(Token::COMMA)) { names.push_back(parse_name()); }
+		while (match_token(Token::COMMA))
+			names.push_back(parse_name());
 		expect_token(Token::COLON);
 		Typespec *type{ parse_type() };
 		expect_token(Token::SEMICOLON);
@@ -486,19 +522,22 @@ namespace Ion
 		const char *name{ parse_name() };
 		expect_token(Token::LBRACE);
 		std::vector<AggregateItem> items;
-		while (!is_token(Token::END_OF_FILE) && !is_token(Token::RBRACE)) { items.push_back(parse_decl_aggregate_item()); }
+		while (!is_token(Token::END_OF_FILE) && !is_token(Token::RBRACE))
+			items.push_back(parse_decl_aggregate_item());
 		expect_token(Token::RBRACE);
 		return decl_aggregate(kind, name, items);
 	}
 	Decl *parse_decl_var()
 	{
 		const char *name{ parse_name() };
-		if (match_token(Token::ASSIGN)) { return decl_var(name, nullptr, parse_expr()); }
+		if (match_token(Token::ASSIGN)) 
+			return decl_var(name, nullptr, parse_expr());
 		else if (match_token(Token::COLON))
 		{
 			Typespec *type{ parse_type() };
 			Expr *expr{ nullptr };
-			if (match_token(Token::ASSIGN)) { expr = parse_expr(); }
+			if (match_token(Token::ASSIGN))
+				expr = parse_expr();
 			return decl_var(name, type, expr);
 		}
 		else
@@ -535,16 +574,18 @@ namespace Ion
 		if (!is_token(Token::RPAREN))
 		{
 			params.push_back(parse_decl_func_param());
-			while (match_token(Token::COMMA)) { params.push_back(parse_decl_func_param()); }
+			while (match_token(Token::COMMA))
+				params.push_back(parse_decl_func_param());
 		}
 		expect_token(Token::RPAREN);
 		Typespec *ret_type{ nullptr };
-		if (match_token(Token::COLON)) { ret_type = parse_type(); }
-		StmtBlock block{ parse_stmt_block() };
+		if (match_token(Token::COLON))
+			ret_type = parse_type();
+		StmtList block{ parse_stmt_block() };
 		return decl_func(name, params, ret_type, block);
 	}
 
-	Decl *parse_decl()
+	Decl *parse_decl_opt()
 	{
 		if (match_keyword(enum_keyword)) { return parse_decl_enum(); }
 		else if (match_keyword(struct_keyword)) { return parse_decl_aggregate(Decl::STRUCT); }
@@ -558,6 +599,14 @@ namespace Ion
 			fatal_syntax_error("Expected declaration keyword, got %s", token_kind_name(token.kind));
 			return nullptr;
 		}
+	}
+
+	Decl *parse_decl()
+	{
+		Decl *decl{ parse_decl_opt() };
+		if (!decl)
+			fatal_syntax_error("Expected declaration keyword, got %s", token_info());
+		return decl;
 	}
 
 	void parse_and_print_decl(const char *str)

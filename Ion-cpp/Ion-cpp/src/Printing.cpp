@@ -1,37 +1,74 @@
 #include "Printing.hpp"
+#include <stdarg.h>
+
 
 namespace Ion
 {
+	void buff_printf(const char* fmt, ...)
+	{
+		va_list args;
+		va_start(args, fmt);
+
+
+		char buf[1024];
+		int size = std::vsnprintf(buf, 256, fmt, args);
+		if (size < 256)
+			print_buf += buf;
+		else
+		{
+			char *newBuf = (char*)malloc(size * sizeof(char));
+			std::vsnprintf(newBuf, size, fmt, args);
+			print_buf += newBuf;
+			free(newBuf);
+		}
+
+
+		va_end(args);
+	}
+
+	FILE *flush_print_buff(FILE *file)
+	{
+		if (!print_buf.empty())
+		{
+			if (file)
+				fputs(print_buf.c_str(), file);
+			
+			print_buf.clear();
+		}
+		return file;
+	}
+
 	void print_newline()
 	{
-		std::printf("\n%.*s", 2 * indent, "                                                                      ");
+		PRINTF("\n%.*s", 2 * indent, "                                                                      ");
 	}
 
 	void print_typespec(Typespec *type)
 	{
 		switch (Typespec *t{ type }; t->kind)
 		{
-		case Typespec::NAME: std::printf("%s", t->name); break;
+		case Typespec::NAME: PRINTF("%s", t->name); break;
 		case Typespec::FUNC:
-			std::printf("(func (");
+			PRINTF("(func (");
 			for (Typespec *it : t->func.args)
 			{
-				std::printf(" ");
+				PRINTF(" ");
 				print_typespec(it);
 			}
-			std::printf(") ");
-			print_typespec(t->func.ret);
-			std::printf(")"); break;
+			PRINTF(" ) ");
+			if (t->func.ret) print_typespec(t->func.ret);
+			else PRINTF("void");
+			PRINTF(")"); break;
 		case Typespec::ARRAY:
-			std::printf("(array ");
+			PRINTF("(array ");
 			print_typespec(t->array.elem);
-			std::printf(" ");
+			PRINTF(" ");
 			print_expr(t->array.size);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Typespec::PTR:
-			std::printf("(ptr ");
+			PRINTF("(ptr ");
 			print_typespec(t->ptr.elem);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		default: assert(0); break;
 		}
 	}
@@ -40,115 +77,136 @@ namespace Ion
 	{
 		switch (Expr *e{ expr }; e->kind)
 		{
-		case Expr::INT: std::printf("%" PRIu64, e->int_val); break;
-		case Expr::FLOAT: std::printf("%f", e->float_val); break;
-		case Expr::STR: std::printf("\"%s\"", e->str_val); break;
-		case Expr::NAME: std::printf("%s", e->name); break;
+		case Expr::INT: PRINTF("%" PRIu64, e->int_val); break;
+		case Expr::FLOAT: PRINTF("%f", e->float_val); break;
+		case Expr::STR: PRINTF("\"%s\"", e->str_val); break;
+		case Expr::NAME: PRINTF("%s", e->name); break;
 		case Expr::SIZEOF_EXPR:
-			std::printf("(sizeof-expr ");
+			PRINTF("(sizeof-expr ");
 			print_expr(e->sizeof_expr);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Expr::SIZEOF_TYPE:
-			std::printf("(sizeof-type ");
+			PRINTF("(sizeof-type ");
 			print_typespec(e->sizeof_type);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Expr::CAST:
-			std::printf("(cast "); print_typespec(e->cast.type);
-			std::printf(" "); print_expr(e->cast.expr);
-			std::printf(")"); break;
+			PRINTF("(cast "); print_typespec(e->cast.type);
+			PRINTF(" "); print_expr(e->cast.expr);
+			PRINTF(")"); break;
 		case Expr::CALL:
-			std::printf("("); print_expr(e->call.expr);
-			for (Expr *it : e->call.args)
-			{
-				std::printf(" "); print_expr(it);
+			PRINTF("("); print_expr(e->call.expr);
+			for (Expr *it : e->call.args) {
+				PRINTF(" "); print_expr(it);
 			}
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Expr::INDEX:
-			std::printf("(index "); print_expr(e->index.expr);
-			std::printf(" "); print_expr(e->index.index);
-			std::printf(")"); break;
+			PRINTF("(index "); print_expr(e->index.expr);
+			PRINTF(" "); print_expr(e->index.index);
+			PRINTF(")"); break;
 		case Expr::FIELD:
-			std::printf("(field "); print_expr(e->field.expr);
-			std::printf(" %s)", e->field.name); break;
+			PRINTF("(field "); print_expr(e->field.expr);
+			PRINTF(" %s)", e->field.name); break;
 		case Expr::COMPOUND:
-			std::printf("(compound ");
-			if (e->compound.type) { print_typespec(e->compound.type); }
-			else { std::printf("nil"); }
-			for (Expr *it : e->compound.args)
+			PRINTF("(compound ");
+			if (e->compound.type)
+				print_typespec(e->compound.type);
+			else
+				PRINTF("nil");
+			for (auto &it : e->compound.fields)
 			{
-				std::printf(" "); print_expr(it);
+				PRINTF(" ");
+				if (it.kind == CompoundField::DEFAULT)
+					PRINTF("(nil ");
+				else if (it.kind == CompoundField::NAME)
+					PRINTF("(name %s ", it.name);
+				else 
+				{
+					assert(it.kind == CompoundField::INDEX);
+					PRINTF("(index ");
+					print_expr(it.index);
+					PRINTF(" ");
+				}
+				print_expr(it.init);
+				PRINTF(")");
 			}
-			std::printf(")"); break;
+			PRINTF(")");
+			break;
 		case Expr::UNARY:
-			std::printf("(%s ", token_kind_name(e->binary.op));
+			PRINTF("(%s ", token_kind_name(e->binary.op));
 			print_expr(e->unary.expr);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Expr::BINARY:
-			std::printf("(%s ", token_kind_name(e->unary.op));
+			PRINTF("(%s ", token_kind_name(e->unary.op));
 			print_expr(e->binary.left);
-			std::printf(" ");
+			PRINTF(" ");
 			print_expr(e->binary.right);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Expr::TERNARY:
-			std::printf("(? "); print_expr(e->ternary.cond);
-			std::printf(" "); print_expr(e->ternary.then_expr);
-			std::printf(" "); print_expr(e->ternary.else_expr);
-			std::printf(")"); break;
+			PRINTF("(? "); print_expr(e->ternary.cond);
+			PRINTF(" "); print_expr(e->ternary.then_expr);
+			PRINTF(" "); print_expr(e->ternary.else_expr);
+			PRINTF(")"); break;
 		default: assert(0); break;
 		}
 	}
 
-	void print_stmt_block(StmtBlock block)
+	void print_stmt_block(StmtList block)
 	{
-		std::printf("(block");
+		PRINTF("(block");
 		++indent;
 		for (Stmt *it : block.stmts)
 		{
 			print_newline();
 			print_stmt(it);
 		}
-		--indent; std::printf(")");
+		--indent; PRINTF(")");
 	}
 	void print_stmt(Stmt *stmt)
 	{
 		switch (Stmt *s{ stmt }; s->kind)
 		{
+		case Stmt::DECL: print_decl(stmt->decl);
 		case Stmt::RETURN:
-			std::printf("(return "); print_expr(s->return_stmt.expr);
-			std::printf(")"); break;
-		case Stmt::BREAK: std::printf("(break)"); break;
-		case Stmt::CONTINUE: std::printf("(continue)"); break;
+			PRINTF("(return");
+			if (s->expr)
+			{
+				PRINTF(" ");
+				print_expr(s->expr);
+			}
+			PRINTF(")"); break;
+		case Stmt::BREAK: PRINTF("(break)"); break;
+		case Stmt::CONTINUE: PRINTF("(continue)"); break;
 		case Stmt::BLOCK: print_stmt_block(s->block); break;
 		case Stmt::IF:
-			std::printf("(if "); print_expr(s->if_stmt.cond);
+			PRINTF("(if "); print_expr(s->if_stmt.cond);
 			++indent; print_newline();
 			print_stmt_block(s->if_stmt.then_block);
 			for (ElseIf &it : s->if_stmt.elseifs)
 			{
-				print_newline(); std::printf("elseif ");
+				print_newline(); PRINTF("elseif ");
 				print_expr(it.cond); print_newline();
 				print_stmt_block(it.block);
 			}
 			if (!s->if_stmt.else_block.stmts.empty())
 			{
-				print_newline(); std::printf("else ");
+				print_newline(); PRINTF("else ");
 				print_newline();
 				print_stmt_block(s->if_stmt.else_block);
 			}
 			--indent;
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::WHILE:
-			std::printf("(while "); print_expr(s->while_stmt.cond);
+			PRINTF("(while "); print_expr(s->while_stmt.cond);
 			++indent; print_newline();
 			print_stmt_block(s->while_stmt.block); --indent;
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::DO_WHILE:
-			std::printf("(do-while "); print_expr(s->while_stmt.cond);
+			PRINTF("(do-while "); print_expr(s->while_stmt.cond);
 			++indent; print_newline();
 			print_stmt_block(s->while_stmt.block); --indent;
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::FOR:
-			std::printf("(for ");
+			PRINTF("(for ");
 			print_stmt(s->for_stmt.init);
 			print_expr(s->for_stmt.cond);
 			print_stmt(s->for_stmt.next);
@@ -156,38 +214,36 @@ namespace Ion
 			print_newline();
 			print_stmt_block(s->for_stmt.block);
 			--indent;
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::SWITCH:
-			std::printf("(switch ");
+			PRINTF("(switch ");
 			print_expr(s->switch_stmt.expr);
 			++indent;
 			for (SwitchCase &it : s->switch_stmt.cases)
 			{
 				print_newline();
-				std::printf("(case (%s", it.is_default ? " default" : "");
-				for (Expr *exprIt : it.exprs)
-				{
-					std::printf(" "); print_expr(exprIt);
+				PRINTF("(case (%s", it.is_default ? " default" : "");
+				for (Expr *exprIt : it.exprs) {
+					PRINTF(" "); print_expr(exprIt);
 				}
-				std::printf(" ) ");
+				PRINTF(" ) ");
 				++indent;
 				print_newline(); print_stmt_block(it.block);
 				--indent;
 			}
 			--indent;
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::ASSIGN:
-			std::printf("(%s ", token_kind_name(s->assign.op));
+			PRINTF("(%s ", token_kind_name(s->assign.op));
 			print_expr(s->assign.left);
-			if (s->assign.right)
-			{
-				std::printf(" "); print_expr(s->assign.right);
+			if (s->assign.right) {
+				PRINTF(" "); print_expr(s->assign.right);
 			}
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::INIT:
-			std::printf("(:= %s ", s->init.name);
+			PRINTF("(:= %s ", s->init.name);
 			print_expr(s->init.expr);
-			std::printf(")"); break;
+			PRINTF(")"); break;
 		case Stmt::EXPR: print_expr(s->expr); break;
 		default: assert(0); break;
 		}
@@ -199,12 +255,12 @@ namespace Ion
 		for (AggregateItem &it : d->aggregate.items)
 		{
 			print_newline();
-			std::printf("("); print_typespec(it.type);
+			PRINTF("("); print_typespec(it.type);
 			for (const char *name : it.names)
 			{
-				std::printf(" %s", name);
+				PRINTF(" %s", name);
 			}
-			std::printf(")");
+			PRINTF(")");
 		}
 	}
 	void print_decl(Decl *decl)
@@ -213,68 +269,68 @@ namespace Ion
 		switch (d->kind)
 		{
 		case Decl::ENUM:
-			std::printf("(enum %s", d->name);
+			PRINTF("(enum %s", d->name);
 			indent++;
 			for (EnumItem &it : d->enum_decl.items)
 			{
 				print_newline();
-				std::printf("(%s ", it.name);
-				if (it.init) { print_expr(it.init); }
-				else { std::printf("nil"); }
-				std::printf(")");
+				PRINTF("(%s ", it.name);
+				if (it.init) print_expr(it.init);
+				else PRINTF("nil");
+				PRINTF(")");
 			}
 			indent--;
-			std::printf(")");
+			PRINTF(")");
 			break;
 		case Decl::STRUCT:
-			std::printf("(struct %s", d->name);
+			PRINTF("(struct %s", d->name);
 			indent++;
 			print_aggregate_decl(d);
 			indent--;
-			std::printf(")");
+			PRINTF(")");
 			break;
 		case Decl::UNION:
-			std::printf("(union %s", d->name);
+			PRINTF("(union %s", d->name);
 			indent++;
 			print_aggregate_decl(d);
 			indent--;
-			std::printf(")");
+			PRINTF(")");
 			break;
 		case Decl::VAR:
-			std::printf("(var %s ", d->name);
-			if (d->var.type) { print_typespec(d->var.type); }
-			else { std::printf("nil"); }
-			std::printf(" ");
-			if (d->var.expr) { print_expr(d->var.expr); }
-			else { printf("nil"); }
-			std::printf(")");
+			PRINTF("(var %s ", d->name);
+			if (d->var.type) print_typespec(d->var.type);
+			else PRINTF("nil");
+			PRINTF(" ");
+			if (d->var.expr) print_expr(d->var.expr);
+			else PRINTF("nil");
+			PRINTF(")");
 			break;
 		case Decl::CONST:
-			std::printf("(const %s ", d->name);
+			PRINTF("(const %s ", d->name);
 			print_expr(d->const_decl.expr);
-			std::printf(")");
+			PRINTF(")");
 			break;
 		case Decl::TYPEDEF:
-			std::printf("(typedef %s ", d->name);
+			PRINTF("(typedef %s ", d->name);
 			print_typespec(d->typedef_decl.type);
-			std::printf(")");
+			PRINTF(")");
 			break;
 		case Decl::FUNC:
-			std::printf("(func %s ", d->name);
-			std::printf("(");
+			PRINTF("(func %s ", d->name);
+			PRINTF("(");
 			for (FuncParam &it : d->func.params)
 			{
-				std::printf(" %s ", it.name);
+				PRINTF(" %s ", it.name);
 				print_typespec(it.type);
 			}
-			std::printf(" ) ");
-			if (d->func.ret_type) { print_typespec(d->func.ret_type); }
-			else { std::printf("nil"); }
+			PRINTF(" ) ");
+			if (d->func.ret_type) print_typespec(d->func.ret_type);
+			else PRINTF("nil");
 			indent++;
 			print_newline();
 			print_stmt_block(d->func.block);
 			indent--;
-			std::printf(")");
+			PRINTF(")");
 			break;
 		default: assert(0); break;
 		}
@@ -288,36 +344,35 @@ namespace Ion
 			expr_field(expr_name("person"), "name"),
 			expr_call(expr_name("fact"), std::vector<Expr*> { expr_int(42) }),
 			expr_index(expr_field(expr_name("person"), "siblings"), expr_int(3)),
-			expr_cast(typespec_ptr(typespec_name("int")), expr_name("void_ptr")),
-			expr_compound(typespec_name("Vector"), std::vector<Expr*> { expr_int(1), expr_int(2) })
+			expr_cast(typespec_ptr(typespec_name("int")), expr_name("void_ptr"))
 		};
 		for (Expr *it : exprs)
 		{
-			print_expr(it); std::printf("\n");
+			print_expr(it); PRINTF("\n");
 		}
 
 		std::vector<Stmt *> stmts = {
 			stmt_return(expr_int(42)), stmt_break(), stmt_continue(),
-			stmt_block(StmtBlock{ std::vector<Stmt*> { stmt_break(), stmt_continue() }, }),
+			stmt_block(StmtList{ std::vector<Stmt*> { stmt_break(), stmt_continue() }, }),
 			stmt_expr(expr_call(expr_name("print"), std::vector<Expr*> { expr_int(1), expr_int(2) })),
-			stmt_init("x", expr_int(42)), stmt_if(expr_name("flag1"), StmtBlock{ std::vector<Stmt*> {
+			stmt_init("x", expr_int(42)), stmt_if(expr_name("flag1"), StmtList{ std::vector<Stmt*> {
 			stmt_return(expr_int(1)) }, },
 				std::vector<ElseIf> { {expr_name("flag2"),
-				StmtBlock{ std::vector<Stmt*> { stmt_return(expr_int(2)) } } } },
-				StmtBlock{ std::vector<Stmt*> { stmt_return(expr_int(3)) } }
+				StmtList{ std::vector<Stmt*> { stmt_return(expr_int(2)) } } } },
+				StmtList{ std::vector<Stmt*> { stmt_return(expr_int(3)) } }
 				),
 			stmt_while(expr_name("running"),
-				StmtBlock{ std::vector<Stmt*> {
+				StmtList{ std::vector<Stmt*> {
 				stmt_assign(Token::ADD_ASSIGN, expr_name("i"), expr_int(16)) } }),
 				stmt_switch(expr_name("val"), std::vector<SwitchCase> { { {
 						std::vector<Expr*> { expr_int(3), expr_int(4) },
-							false, StmtBlock{ std::vector<Stmt*> { stmt_return(expr_name("val")) }, }, },
-						{ std::vector<Expr*>{expr_int(1)}, true, StmtBlock{ std::vector<Stmt*> {
+							false, StmtList{ std::vector<Stmt*> { stmt_return(expr_name("val")) }, }, },
+						{ std::vector<Expr*>{expr_int(1)}, true, StmtList{ std::vector<Stmt*> {
 							stmt_return(expr_int(0)) } } } } })
 		};
 		for (Stmt *it : stmts)
 		{
-			print_stmt(it); std::printf("\n");
+			print_stmt(it); PRINTF("\n");
 		}
 	}
 }

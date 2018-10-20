@@ -2,12 +2,10 @@
 #include "stdafx.h"
 #include "Parse.hpp"
 
-// TODO: add compiler warnings in case of wrong ordering for a cleaner coding style
-
 namespace Ion
 {
 	struct TypeField;
-	struct Entity;
+	struct Sym;
 
 	struct Type
 	{
@@ -21,7 +19,8 @@ namespace Ion
 			ENUM, FUNC,
 		} kind;
 		size_t size;
-		Entity *entity;
+		size_t align;
+		Sym *sym;
 		union
 		{
 			struct
@@ -43,7 +42,7 @@ namespace Ion
 				Type *ret;
 			} func;
 		};
-		Type(Type::Kind k, size_t s) : kind(k), size(s) {}
+		Type(Type::Kind k, size_t s, size_t a) : kind(k), size(s), align(a) {}
 		~Type() { }
 	};
 	struct TypeField
@@ -65,8 +64,10 @@ namespace Ion
 	extern Type *type_int;
 	extern Type *type_float;
 	extern const size_t PTR_SIZE;
+	extern const size_t PTR_ALIGN;
 
 	size_t type_sizeof(Type *type);
+	size_t type_alignof(Type *type);
 
 	struct CachedPtrType
 	{
@@ -85,9 +86,6 @@ namespace Ion
 	extern std::vector<CachedArrayType> cached_array_types;
 	Type *type_array(Type *elem, size_t size);
 
-	Type *type_struct(std::vector<TypeField> fields);
-	Type *type_union(std::vector<TypeField> fields);
-
 	struct CachedFuncType
 	{
 		std::vector<Type*> params;
@@ -97,11 +95,12 @@ namespace Ion
 	extern std::vector<CachedFuncType> cached_func_types;
 	Type *type_func(std::vector<Type*> params, Type *ret);
 
+	bool duplicate_fields(std::vector<TypeField> fields);
 	void type_complete_struct(Type *type, std::vector<TypeField> fields);
 	void type_complete_union(Type *type, std::vector<TypeField> fields);
-	Type *type_incomplete(Entity *entity);
+	Type *type_incomplete(Sym *sym);
 
-	struct Entity
+	struct Sym
 	{
 		const char *name;
 		enum Kind
@@ -121,13 +120,19 @@ namespace Ion
 		int64_t val;
 	};
 
-	extern std::vector<Entity*> entities;
-	Entity *entity_new(Entity::Kind kind, const char *name, Decl *decl);
-	Entity *entity_decl(Decl *decl);
-	Entity *entity_enum_const(const char *name, Decl *decl);
-	Entity *entity_get(const char *name);
-	Entity *entity_install_decl(Decl *decl);
-	Entity *entity_install_type(const char *name, Type *type);
+	enum
+	{
+		MAX_LOCAL_SYMS = 1024,
+	};
+	extern std::vector<Sym*> global_syms;
+	extern Sym* local_syms[MAX_LOCAL_SYMS];
+	extern Sym **local_syms_end;
+	Sym *sym_new(Sym::Kind kind, const char *name, Decl *decl);
+	Sym *sym_decl(Decl *decl);
+	Sym *sym_enum_const(const char *name, Decl *decl);
+	Sym *sym_get(const char *name);
+	Sym *sym_install_decl(Decl *decl);
+	Sym *sym_install_type(const char *name, Type *type);
 
 	struct ResolvedExpr
 	{
@@ -150,23 +155,23 @@ namespace Ion
 		return ResolvedExpr{ type_int, false, true, val };
 	}
 
-	Entity *resolve_name(const char *name);
-	int64_t resolve_int_const_expr(Expr *expr);
+	Sym *resolve_name(const char *name);
+	int64_t resolve_const_expr(Expr *expr);
 	ResolvedExpr resolve_expr(Expr *expr, Type *expected_type = nullptr);
 
 	Type *resolve_typespec(Typespec *typespec);
 
-	extern std::vector<Entity*> ordered_entities;
+	extern std::vector<Sym*> ordered_syms;
 	void complete_type(Type *type);
 
 	Type *resolve_decl_type(Decl *decl);
 	Type *resolve_decl_var(Decl *decl);
 	Type *resolve_decl_const(Decl *decl, int64_t *val);
 	Type *resolve_decl_func(Decl *decl);
-	void resolve_entity(Entity *entity);
-	void complete_entity(Entity *entity);
+	void resolve_sym(Sym *sym);
+	void complete_sym(Sym *sym);
 
-	Entity *resolve_name(const char *name);
+	Sym *resolve_name(const char *name);
 	ResolvedExpr resolve_expr_field(Expr *expr);
 	ResolvedExpr ptr_decay(ResolvedExpr expr);
 	ResolvedExpr resolve_expr_name(Expr *expr);

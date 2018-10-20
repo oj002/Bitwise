@@ -13,7 +13,7 @@ namespace Ion
 	}
 	void *ast_dup(const void *src, size_t size)
 	{
-		if (size == 0) { return nullptr; }
+		if (size == 0) return nullptr;
 		void *ptr{ arena_alloc(&ast_arena, size) };
 		memcpy(ptr, src, size);
 		return ptr;
@@ -84,7 +84,7 @@ namespace Ion
 		d->var.expr = expr;
 		return d;
 	}
-	Decl *decl_func(const char *name, std::vector<FuncParam> params, Typespec *ret_type, StmtBlock block)
+	Decl *decl_func(const char *name, std::vector<FuncParam> params, Typespec *ret_type, StmtList block)
 	{
 		Decl *d{ decl_new(Decl::FUNC, name) };
 		d->func.params = params;
@@ -146,11 +146,11 @@ namespace Ion
 		e->name = name;
 		return e;
 	}
-	Expr *expr_compound(Typespec *type, std::vector<Expr *> args)
+	Expr *expr_compound(Typespec *type, std::vector<CompoundField> fields)
 	{
 		Expr *e = expr_new(Expr::COMPOUND);
 		e->compound.type = type;
-		e->compound.args = args;
+		e->compound.fields = fields;
 		return e;
 	}
 	Expr *expr_cast(Typespec *type, Expr *expr)
@@ -211,21 +211,27 @@ namespace Ion
 		s->kind = kind;
 		return s;
 	}
+	Stmt *stmt_decl(Decl *decl)
+	{
+		Stmt *s = stmt_new(Stmt::DECL);
+		s->decl = decl;
+		return s;
+	}
 	Stmt *stmt_return(Expr *expr)
 	{
 		Stmt *s{ stmt_new(Stmt::RETURN) };
-		s->return_stmt.expr = expr;
+		s->expr = expr;
 		return s;
 	}
 	Stmt *stmt_break() { return stmt_new(Stmt::BREAK); }
 	Stmt *stmt_continue() { return stmt_new(Stmt::CONTINUE); }
-	Stmt *stmt_block(StmtBlock block)
+	Stmt *stmt_block(StmtList block)
 	{ 
 		Stmt *s{ stmt_new(Stmt::BLOCK) };
 		s->block = block;
 		return s;
 	}
-	Stmt *stmt_if(Expr *cond, StmtBlock then_block, std::vector<ElseIf> elseifs, StmtBlock else_block)
+	Stmt *stmt_if(Expr *cond, StmtList then_block, std::vector<ElseIf> elseifs, StmtList else_block)
 	{
 		Stmt *s{ stmt_new(Stmt::IF) };
 		s->if_stmt.cond = cond;
@@ -234,21 +240,21 @@ namespace Ion
 		s->if_stmt.else_block = else_block;
 		return s;
 	}
-	Stmt *stmt_while(Expr *cond, StmtBlock block)
+	Stmt *stmt_while(Expr *cond, StmtList block)
 	{
 		Stmt *s{ stmt_new(Stmt::WHILE) };
 		s->while_stmt.cond = cond;
 		s->while_stmt.block = block;
 		return s;
 	}
-	Stmt *stmt_do_while(Expr *cond, StmtBlock block)
+	Stmt *stmt_do_while(Expr *cond, StmtList block)
 	{
 		Stmt *s{ stmt_new(Stmt::DO_WHILE) };
 		s->while_stmt.cond = cond;
 		s->while_stmt.block = block;
 		return s;
 	}
-	Stmt *stmt_for(Stmt *init, Expr *cond, Stmt *next, StmtBlock block)
+	Stmt *stmt_for(Stmt *init, Expr *cond, Stmt *next, StmtList block)
 	{
 		Stmt *s{ stmt_new(Stmt::FOR) };
 		s->for_stmt.init = init;

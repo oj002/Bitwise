@@ -1,7 +1,7 @@
 #include "Resolve.hpp"
 #include <stdbool.h>
 
-// https://youtu.be/VRMxHYuW2BY
+// https://youtu.be/VRMxHYuW2BY?t=578
 
 int main()
 {
@@ -10,6 +10,7 @@ int main()
 	// Ion::print_test();
 	// Ion::parse_test();
 	Ion::resolve_test();
+	//fclose(Ion::flush_print_buff(fopen("test.txt", "w")));
 
 	system("pause");
 	return 0;

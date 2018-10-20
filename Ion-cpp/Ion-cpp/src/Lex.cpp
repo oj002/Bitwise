@@ -9,8 +9,8 @@ namespace Ion
 	const char *var_keyword;
 	const char *const_keyword;
 	const char *func_keyword;
-	const char *cast_keyword;
 	const char *sizeof_keyword;
+	const char *cast_keyword;
 	const char *break_keyword;
 	const char *continue_keyword;
 	const char *return_keyword;
@@ -44,8 +44,8 @@ namespace Ion
 		KEYWORD(const);
 		KEYWORD(var);
 		KEYWORD(func);
-		KEYWORD(cast);
 		KEYWORD(sizeof);
+		KEYWORD(cast);
 		KEYWORD(break);
 		KEYWORD(continue);
 		KEYWORD(return);

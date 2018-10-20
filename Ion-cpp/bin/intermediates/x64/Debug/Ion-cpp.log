@@ -1,7 +1,13 @@
 ﻿  Resolve.cpp
-c:\dev\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
-c:\dev\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
-c:\dev\bitwise\ion-cpp\ion-cpp\src\ast.hpp(168): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
-c:\dev\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
-c:\dev\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(584): warning C4706: assignment within conditional expression
-  Ion-cpp.vcxproj -> C:\dev\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(43): warning C4624: 'Ion::Typespec': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(101): warning C4624: 'Ion::Decl': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(178): warning C4624: 'Ion::Expr': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\ast.hpp(245): warning C4624: 'Ion::Stmt': destructor was implicitly defined as deleted
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(121): error C2440: 'initializing': cannot convert from 'Ion::Sym *(*)[1024]' to 'Ion::Sym **'
+  c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(121): note: Types pointed to are unrelated; conversion requires reinterpret_cast, C-style cast or function-style cast
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(154): error C2440: 'initializing': cannot convert from 'Ion::Sym **' to 'Ion::Sym *'
+  c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(154): note: Types pointed to are unrelated; conversion requires reinterpret_cast, C-style cast or function-style cast
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(154): error C2446: '!=': no conversion from 'Ion::Sym **' to 'Ion::Sym *'
+  c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(154): note: Types pointed to are unrelated; conversion requires reinterpret_cast, C-style cast or function-style cast
+c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(156): error C2440: 'initializing': cannot convert from 'Ion::Sym' to 'Ion::Sym *'
+  c:\dev\projects\bitwise\ion-cpp\ion-cpp\src\resolve.cpp(156): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called

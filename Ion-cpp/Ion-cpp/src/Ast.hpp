@@ -8,7 +8,7 @@ namespace Ion
 	struct Decl;
 	struct Typespec;
 
-	struct StmtBlock
+	struct StmtList
 	{
 		std::vector<Stmt *> stmts;
 	};
@@ -47,15 +47,15 @@ namespace Ion
 		const char * name;
 		Typespec *type;
 	};
-	struct EnumItem
-	{
-		const char *name;
-		Expr *init;
-	};
 	struct AggregateItem
 	{
 		std::vector<const char *> names;
 		Typespec *type;
+	};
+	struct EnumItem
+	{
+		const char *name;
+		Expr *init;
 	};
 	struct Decl
 	{
@@ -82,7 +82,7 @@ namespace Ion
 			{
 				std::vector<FuncParam> params;
 				Typespec *ret_type;
-				StmtBlock block;
+				StmtList block;
 			} func;
 			struct
 			{
@@ -100,6 +100,16 @@ namespace Ion
 		};
 	};
 
+	struct CompoundField
+	{
+		enum Kind { DEFAULT, NAME, INDEX } kind;
+		Expr *init;
+		union
+		{
+			const char *name;
+			Expr *index;
+		};
+	};
 	struct Expr
 	{
 		enum Kind
@@ -125,7 +135,7 @@ namespace Ion
 			struct
 			{
 				Typespec *type;
-				std::vector<Expr *> args;
+				std::vector<CompoundField> fields;
 			} compound;
 			struct
 			{
@@ -170,59 +180,56 @@ namespace Ion
 	struct ElseIf
 	{
 		Expr *cond;
-		StmtBlock block;
+		StmtList block;
 	};
 	struct SwitchCase 
 	{
 		std::vector<Expr *> exprs;
 		bool is_default;
-		StmtBlock block;
+		StmtList block;
 	};
 
 	struct Stmt
 	{
 		enum Kind
 		{
-			NONE, RETURN,
-			BREAK, CONTINUE,
-			BLOCK, IF,
-			WHILE, FOR,
-			DO_WHILE, SWITCH,
-			AUTO_ASSIGN,
-			ASSIGN, INIT,
-			EXPR
+			NONE, DECL,
+			RETURN, BREAK,
+			CONTINUE, BLOCK,
+			IF, WHILE,
+			DO_WHILE, FOR,
+			SWITCH, ASSIGN,
+			INIT, EXPR
 		} kind;
 		union
 		{
-			struct
-			{
-				Expr *expr;
-			} return_stmt;
+			Expr *expr;
+			Decl *decl;
 			struct
 			{
 				Expr *cond;
-				StmtBlock then_block;
+				StmtList then_block;
 				std::vector<ElseIf> elseifs;
-				StmtBlock else_block;
+				StmtList else_block;
 			} if_stmt;
 			struct
 			{
 				Expr *cond;
-				StmtBlock block;
+				StmtList block;
 			} while_stmt;
 			struct
 			{
 				Stmt *init;
 				Expr *cond;
 				Stmt *next;
-				StmtBlock block;
+				StmtList block;
 			} for_stmt;
 			struct
 			{
 				Expr *expr;
 				std::vector<SwitchCase> cases;
 			} switch_stmt;
-			StmtBlock block;
+			StmtList block;
 			struct
 			{
 				Token::Kind op;
@@ -234,7 +241,6 @@ namespace Ion
 				const char *name;
 				Expr *expr;
 			} init;
-			Expr *expr;
 		};
 	};
 
@@ -252,7 +258,7 @@ namespace Ion
 	Decl *decl_aggregate(Decl::Kind kind, const char *name, std::vector<AggregateItem> items);
 	Decl *decl_union(const char *name, std::vector<AggregateItem> items);
 	Decl *decl_var(const char *name, Typespec *type, Expr *expr);
-	Decl *decl_func(const char *name, std::vector<FuncParam> params, Typespec *ret_type, StmtBlock block);
+	Decl *decl_func(const char *name, std::vector<FuncParam> params, Typespec *ret_type, StmtList block);
 	Decl *decl_const(const char *name, Expr *expr);
 	Decl *decl_typedef(const char *name, Typespec *type);
 
@@ -263,7 +269,7 @@ namespace Ion
 	Expr *expr_float(double val);
 	Expr *expr_str(const char *str);
 	Expr *expr_name(const char *name);
-	Expr *expr_compound(Typespec *type, std::vector<Expr *> args);
+	Expr *expr_compound(Typespec *type, std::vector<CompoundField> fields);
 	Expr *expr_cast(Typespec *type, Expr *expr);
 	Expr *expr_call(Expr *expr, std::vector<Expr *> args);
 	Expr *expr_index(Expr *expr, Expr *index);
@@ -273,14 +279,15 @@ namespace Ion
 	Expr *expr_ternary(Expr *cond, Expr *then_expr, Expr *else_expr);
 
 	Stmt *stmt_new(Stmt::Kind kind);
+	Stmt *stmt_decl(Decl *decl);
 	Stmt *stmt_return(Expr *expr);
 	Stmt *stmt_break();
 	Stmt *stmt_continue();
-	Stmt *stmt_block(StmtBlock block);
-	Stmt *stmt_if(Expr *cond, StmtBlock then_block, std::vector<ElseIf> elseifs, StmtBlock else_block);
-	Stmt *stmt_while(Expr *cond, StmtBlock block);
-	Stmt *stmt_do_while(Expr *cond, StmtBlock block);
-	Stmt *stmt_for(Stmt *init, Expr *cond, Stmt *next, StmtBlock block);
+	Stmt *stmt_block(StmtList block);
+	Stmt *stmt_if(Expr *cond, StmtList then_block, std::vector<ElseIf> elseifs, StmtList else_block);
+	Stmt *stmt_while(Expr *cond, StmtList block);
+	Stmt *stmt_do_while(Expr *cond, StmtList block);
+	Stmt *stmt_for(Stmt *init, Expr *cond, Stmt *next, StmtList block);
 	Stmt *stmt_switch(Expr *expr, std::vector<SwitchCase> cases);
 	Stmt *stmt_assign(Token::Kind op, Expr *left, Expr *right);
 	template<typename T>

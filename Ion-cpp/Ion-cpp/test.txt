@@ -1,0 +1,6 @@
+(union IntOrPtr
+  (int i)
+  ((ptr int) p))
+(var u1 nil (compound IntOrPtr (name i 42)))
+(var u2 nil (compound IntOrPtr (name p (cast (ptr int) 42))))
+(var a (array int 256) (compound nil (nil 1) (nil 2) (index 97 42) (index 255 123)))

@@ -5,6 +5,8 @@
 #define ALIGN_DOWN_PTR(p, a) ((void *)ALIGN_DOWN((uintptr_t)(p), (a)))
 #define ALIGN_UP_PTR(p, a) ((void *)ALIGN_UP((uintptr_t)(p), (a)))
 
+#define IS_POW2(x) (((x) != 0) && ((x) & ((x)-1)) == 0)
+
 namespace Ion
 {
 	void *xcalloc(size_t num_elems, size_t elem_size);

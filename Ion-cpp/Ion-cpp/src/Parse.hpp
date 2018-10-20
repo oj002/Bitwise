@@ -23,7 +23,7 @@ namespace Ion
 	Expr *parse_expr_ternary();
 	Expr *parse_expr();
 	Expr *parse_paren_expr();
-	StmtBlock parse_stmt_block();
+	StmtList parse_stmt_block();
 	Stmt *parse_stmt_if();
 
 	Stmt *parse_stmt_while();
@@ -48,6 +48,7 @@ namespace Ion
 
 	Decl *parse_decl_func();
 
+	Decl *parse_decl_opt();
 	Decl *parse_decl();
 
 	void parse_and_print_decl(const char *str);
