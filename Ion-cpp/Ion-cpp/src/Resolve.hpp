@@ -128,6 +128,10 @@ namespace Ion
 	extern Sym* local_syms[MAX_LOCAL_SYMS];
 	extern Sym **local_syms_end;
 	Sym *sym_new(Sym::Kind kind, const char *name, Decl *decl);
+	Sym *sym_var(const char *name, Type *type);
+	void sym_push(Sym *sym);
+	inline Sym **sym_enter() { return local_syms_end; }
+	inline void sym_leave(Sym **ptr) { local_syms_end = ptr; }
 	Sym *sym_decl(Decl *decl);
 	Sym *sym_enum_const(const char *name, Decl *decl);
 	Sym *sym_get(const char *name);

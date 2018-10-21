@@ -118,7 +118,7 @@ namespace Ion
 	}
 	std::vector<Sym*> global_syms;
 	Sym* local_syms[MAX_LOCAL_SYMS];
-	Sym **local_syms_end = &local_syms;
+	Sym **local_syms_end = local_syms;
 	Sym *sym_new(Sym::Kind kind, const char *name, Decl *decl)
 	{
 		Sym *e{ reinterpret_cast<Sym *>(xcalloc(1, sizeof(Decl))) };
@@ -126,6 +126,19 @@ namespace Ion
 		e->name = name;
 		e->decl = decl;
 		return e;
+	}
+	Sym *sym_var(const char *name, Type *type)
+	{
+		Sym *sym = sym_new(Sym::VAR, name, NULL);
+		sym->state = Sym::RESOLVED;
+		sym->type = type;
+		return sym;
+	}
+	void sym_push(Sym *sym)
+	{
+		if (local_syms_end == local_syms + MAX_LOCAL_SYMS)
+			fatal("Too many local symbols");
+		*local_syms_end++ = sym;
 	}
 	Sym *sym_decl(Decl *decl)
 	{
@@ -289,6 +302,54 @@ namespace Ion
 		if (decl->func.ret_type)
 			ret_type = resolve_typespec(decl->func.ret_type);
 		return type_func(params, ret_type);
+	}
+	void resolve_stmt(Stmt *stmt, Type *ret_type)
+	{
+		switch (stmt->kind)
+		{
+		case Stmt::DECL: assert(0);
+		case Stmt::RETURN:
+		{
+			ResolvedExpr result = resolve_expr(stmt->expr, ret_type);
+			if (result.type != ret_type)
+				fatal("Return type mismatch");
+			break;
+		}
+		case Stmt::BREAK:
+		case Stmt::CONTINUE:
+			// Do nothing
+			break;
+		case Stmt::BLOCK:
+			resolve_stmt_block(stmt->block);
+		case Stmt::IF: assert(0);
+		case Stmt::WHILE: assert(0);
+		case Stmt::DO_WHILE: assert(0);
+		case Stmt::FOR: assert(0);
+		case Stmt::SWITCH: assert(0);
+		case Stmt::ASSIGN: assert(0);
+		case Stmt::INIT: assert(0);
+		case Stmt::EXPR: assert(0);
+		default:
+			assert(0);
+		}
+	}
+	void resolve_stmt_block(StmtList block, Type *ret_type)
+	{
+		for (Stmt *it : block.stmts)
+			resolve_stmt(it, ret_type);
+	}
+	void resolve_func(Sym *sym)
+	{
+		Decl *decl = sym->decl;
+		assert(decl->kind == Decl::FUNC);
+		assert(sym->state == Sym::RESOLVED);
+		Sym **syms = sym_enter();
+		
+		for (auto &it : decl->func.params)
+			sym_push(sym_var(it.name, resolve_typespec(it.type)));
+		resolve_stmt_block(decl->func.block, resolve_typespec(decl->func.ret_type));
+
+		sym_leave(syms);
 	}
 	void resolve_sym(Sym *sym)
 	{
