@@ -1,17 +1,24 @@
+#include "stdafx.h"
+#include "Common.hpp"
+#include "Lex.hpp"
+#include "Ast.hpp"
+#include "Printing.hpp"
+#include "Parse.hpp"
 #include "Resolve.hpp"
-#include <stdbool.h>
+#include "Gen.hpp"
 
-// https://youtu.be/VRMxHYuW2BY?t=2438
 
+// https://youtu.be/X9YWYlp8iQg?t=4889
 int main()
 {
-	Ion::common_test();
-	Ion::lex_test();
-	// Ion::print_test();
-	// Ion::parse_test();
-	Ion::resolve_test();
+	common_test();
+	init_keywords();
+	//lex_test();
+	//print_test();
+	//parse_test();
+	//resolve_test();
 	//fclose(Ion::flush_print_buff(fopen("test.txt", "w")));
-
+	gen_test();
 	system("pause");
 	return 0;
 }

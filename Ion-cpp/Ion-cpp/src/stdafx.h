@@ -4,7 +4,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <cstdarg>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 
