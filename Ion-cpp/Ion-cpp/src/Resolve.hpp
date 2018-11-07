@@ -273,16 +273,17 @@ Sym *sym_get(const char *name)
 			return it;
 	return nullptr;
 }
-Sym *sym_install_decl(Decl *decl)
+Sym *sym_global_decl(Decl *decl)
 {
-	Sym *e{ sym_decl(decl) };
-	global_syms.emplace_back(e);
+	Sym *sym{ sym_decl(decl) };
+	global_syms.emplace_back(sym);
+	decl->sym = sym;
 	if (decl->kind == Decl::ENUM)
 		for (EnumItem &it : decl->enum_decl.items)
 			global_syms.emplace_back(sym_enum_const(it.name, decl));
-	return e;
+	return sym;
 }
-Sym *sym_install_type(const char *name, Type *type)
+Sym *sym_global_type(const char *name, Type *type)
 {
 	Sym *e{ sym_new(Sym::TYPE, name, nullptr) };
 	e->state = Sym::RESOLVED;
@@ -831,34 +832,40 @@ ResolvedExpr resolve_expr_cast(Expr *expr)
 }
 ResolvedExpr resolve_expr(Expr *expr, Type *expected_type)
 {
+	ResolvedExpr result;
 	switch (expr->kind) {
-	case Expr::INT: return resolved_const(expr->int_val);
-	case Expr::FLOAT: return resolved_rvalue(type_float);
-	case Expr::STR: return resolved_rvalue(type_ptr(type_char));
-	case Expr::NAME: return resolve_expr_name(expr);
-	case Expr::CAST: return resolve_expr_cast(expr);
-	case Expr::CALL: return resolve_expr_call(expr);
-	case Expr::INDEX: return resolve_expr_index(expr);
-	case Expr::FIELD: return resolve_expr_field(expr);
-	case Expr::COMPOUND: return resolve_expr_compound(expr, expected_type);
-	case Expr::UNARY: return resolve_expr_unary(expr);
-	case Expr::BINARY: return resolve_expr_binary(expr);
-	case Expr::TERNARY: return resolve_expr_ternary(expr, expected_type);
+	case Expr::INT: result = resolved_const(expr->int_val); break;
+	case Expr::FLOAT: result = resolved_rvalue(type_float); break;
+	case Expr::STR: result = resolved_rvalue(type_ptr(type_char)); break;
+	case Expr::NAME: result = resolve_expr_name(expr); break;
+	case Expr::CAST: result = resolve_expr_cast(expr); break;
+	case Expr::CALL: result = resolve_expr_call(expr); break;
+	case Expr::INDEX: result = resolve_expr_index(expr); break;
+	case Expr::FIELD: result = resolve_expr_field(expr); break;
+	case Expr::COMPOUND: result = resolve_expr_compound(expr, expected_type); break;
+	case Expr::UNARY: result = resolve_expr_unary(expr); break;
+	case Expr::BINARY: result = resolve_expr_binary(expr); break;
+	case Expr::TERNARY: result = resolve_expr_ternary(expr, expected_type); break;
 	case Expr::SIZEOF_EXPR:
 	{
 		ResolvedExpr result = resolve_expr(expr->sizeof_expr);
 		Type *type = result.type;
 		complete_type(type);
-		return resolved_const(type_sizeof(type));
+		result = resolved_const(type_sizeof(type)); break;
 	}
 	case Expr::SIZEOF_TYPE:
 	{
 		Type *type = resolve_typespec(expr->sizeof_type);
 		complete_type(type);
-		return resolved_const(type_sizeof(type));
+		result = resolved_const(type_sizeof(type)); break;
 	}
-	default: assert(0); return resolved_null;
+	default: assert(0); result = resolved_null; break;
 	}
+
+	if (result.type)
+		expr->type = result.type;
+
+	return result;
 }
 int64_t resolve_const_expr(Expr *expr)
 {
@@ -887,10 +894,10 @@ void resolve_test()
 	assert(int_int_func != int_func);
 	assert(int_func == type_func(std::vector<Type*>(0), type_int));
 
-	sym_install_type(str_intern("int"), type_int);
-	sym_install_type(str_intern("char"), type_char);
-	sym_install_type(str_intern("void"), type_void);
-	sym_install_type(str_intern("float"), type_float);
+	sym_global_type(str_intern("int"), type_int);
+	sym_global_type(str_intern("char"), type_char);
+	sym_global_type(str_intern("void"), type_void);
+	sym_global_type(str_intern("float"), type_float);
 
 	const char *code[] = {
 		"struct Vector { x, y: int; }",
@@ -966,7 +973,7 @@ void resolve_test()
 	{
 		init_stream(code[i]);
 		Decl *decl = parse_decl();
-		sym_install_decl(decl);
+		sym_global_decl(decl);
 	}
 	for (Sym *it : global_syms)
 		complete_sym(it);

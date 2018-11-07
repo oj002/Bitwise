@@ -1,18 +1,21 @@
-﻿Build started 02/11/2018 16:40:14.
+﻿Build started 07/11/2018 17:31:43.
      1>Project "C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\Ion-cpp\Ion-cpp.vcxproj" on node 2 (Build target(s)).
      1>InitializeBuildStatus:
          Creating "C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\intermediates\x64\Debug\Ion-cpp.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.15.26726\bin\HostX86\x64\CL.exe /c /I"C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\Ion-cpp\Dependencies\include" /ZI /JMC /nologo /W4 /WX- /diagnostics:classic /sdl /Od /D WIN32 /D _WINDOWS /D _HAS_EXCEPTIONS=0 /D GTEST_HAS_RTTI=0 /D _CRT_SECURE_NO_DEPRECATE /D _CRT_SECURE_NO_WARNINGS /D _CRT_NONSTDC_NO_DEPRECATE /D _CRT_NONSTDC_NO_WARNINGS /D _SCL_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS /D UNICODE /D _UNICODE /D __STDC_CONSTANT_MACROS /D __STDC_FORMAT_MACROS /D __STDC_LIMIT_MACROS /D "CMAKE_INTDIR=\"Debug\"" /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /std:c++latest /Fo"C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\intermediates\x64\Debug\\" /Fd"C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\intermediates\x64\Debug\vc141.pdb" /Gd /TP /FC /errorReport:prompt src\main.cpp
          main.cpp
-     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(39): warning C4624: 'Typespec': destructor was implicitly defined as deleted
-     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(96): warning C4624: 'Decl': destructor was implicitly defined as deleted
-     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(172): warning C4624: 'Expr': destructor was implicitly defined as deleted
-     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Stmt': destructor was implicitly defined as deleted
-     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(823): warning C4706: assignment within conditional expression
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(41): warning C4624: 'Typespec': destructor was implicitly defined as deleted
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(99): warning C4624: 'Decl': destructor was implicitly defined as deleted
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(176): warning C4624: 'Expr': destructor was implicitly defined as deleted
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(243): warning C4624: 'Stmt': destructor was implicitly defined as deleted
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(851): warning C4456: declaration of 'result' hides previous local declaration
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(835): note: see declaration of 'result'
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\gen.hpp(60): warning C4065: switch statement contains 'default' but no 'case' labels
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(824): warning C4706: assignment within conditional expression
+     1>c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(865): warning C4701: potentially uninitialized local variable 'result' used
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.15.26726\bin\HostX86\x64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG:FASTLINK /PDB:"C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.lib" /MACHINE:X64 "C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\intermediates\x64\Debug\main.obj"
-         "C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\intermediates\x64\Debug\stdafx.obj"
          Ion-cpp.vcxproj -> C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\x64\Debug\Ion-cpp.exe
        FinalizeBuildStatus:
          Deleting file "C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\bin\intermediates\x64\Debug\Ion-cpp.tlog\unsuccessfulbuild".
@@ -23,13 +26,16 @@ Build succeeded.
 
        "C:\dev\projects\compilers_and_shit\Bitwise\Ion-cpp\Ion-cpp\Ion-cpp.vcxproj" (Build target) (1) ->
        (ClCompile target) -> 
-         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(39): warning C4624: 'Typespec': destructor was implicitly defined as deleted
-         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(96): warning C4624: 'Decl': destructor was implicitly defined as deleted
-         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(172): warning C4624: 'Expr': destructor was implicitly defined as deleted
-         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(239): warning C4624: 'Stmt': destructor was implicitly defined as deleted
-         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(823): warning C4706: assignment within conditional expression
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(41): warning C4624: 'Typespec': destructor was implicitly defined as deleted
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(99): warning C4624: 'Decl': destructor was implicitly defined as deleted
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(176): warning C4624: 'Expr': destructor was implicitly defined as deleted
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\ast.hpp(243): warning C4624: 'Stmt': destructor was implicitly defined as deleted
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(851): warning C4456: declaration of 'result' hides previous local declaration
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\gen.hpp(60): warning C4065: switch statement contains 'default' but no 'case' labels
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(824): warning C4706: assignment within conditional expression
+         c:\dev\projects\compilers_and_shit\bitwise\ion-cpp\ion-cpp\src\resolve.hpp(865): warning C4701: potentially uninitialized local variable 'result' used
 
-    5 Warning(s)
+    8 Warning(s)
     0 Error(s)
 
-Time Elapsed 00:00:02.07
+Time Elapsed 00:00:01.96

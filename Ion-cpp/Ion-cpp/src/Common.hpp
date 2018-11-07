@@ -41,9 +41,9 @@ void fatal(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	std::printf("FATAL: ");
-	std::printf(fmt, args);
-	std::printf("\n");
+	printf("FATAL: ");
+	printf(fmt, args);
+	printf("\n");
 	va_end(args);
 	assert(0);
 	exit(1);
@@ -52,18 +52,18 @@ void syntax_error(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	std::printf("Syntax Error: ");
-	std::printf(fmt, args);
-	std::printf("\n");
+	printf("Syntax Error: ");
+	printf(fmt, args);
+	printf("\n");
 	va_end(args);
 }
 void fatal_syntax_error(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	std::printf("Syntax Error: ");
-	std::printf(fmt, args);
-	std::printf("\n");
+	printf("Syntax Error: ");
+	printf(fmt, args);
+	printf("\n");
 	va_end(args);
 	assert(0);
 	exit(1);
@@ -118,7 +118,7 @@ void *arena_alloc(Arena *arena, size_t size)
 void arena_free(Arena *arena)
 {
 	for (char *c : arena->blocks)
-		std::free(c);
+		free(c);
 }
 
 struct InternStr
@@ -139,20 +139,20 @@ const char *str_intern_range(const char *start, const char *end)
 	uint64_t len{ static_cast<uint64_t>(end - start) };
 	for (const InternStr &inStr : interns)
 	{
-		if (inStr.len == len && std::strncmp(inStr.str, start, len) == 0)
+		if (inStr.len == len && strncmp(inStr.str, start, len) == 0)
 		{
 			return inStr.str;
 		}
 	}
 	auto *str = reinterpret_cast<char*>(arena_alloc(&str_arena, len + 1));
-	std::memcpy(str, start, len);
+	memcpy(str, start, len);
 	str[len] = 0;
 	interns.emplace_back(len, const_cast<const char*>(str));
 	return str;
 }
 const char *str_intern(const char *str)
 {
-	return str_intern_range(str, str + std::strlen(str));
+	return str_intern_range(str, str + strlen(str));
 }
 
 void str_intern_test()

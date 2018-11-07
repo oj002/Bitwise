@@ -4,6 +4,8 @@ struct Expr;
 struct Stmt;
 struct Decl;
 struct Typespec;
+struct Type;
+struct Sym;
 
 struct StmtList
 {
@@ -63,6 +65,7 @@ struct Decl
 		TYPEDEF, FUNC
 	} kind;
 	const char *name;
+	Sym *sym;
 	union
 	{
 		struct
@@ -118,6 +121,7 @@ struct Expr
 		TERNARY,
 		SIZEOF_EXPR, SIZEOF_TYPE
 	} kind;
+	Type *type;
 	union
 	{
 		uint64_t int_val;

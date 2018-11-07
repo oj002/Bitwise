@@ -11,6 +11,7 @@
 // https://youtu.be/X9YWYlp8iQg?t=4889
 int main()
 {
+	printf("test\n");
 	common_test();
 	init_keywords();
 	//lex_test();

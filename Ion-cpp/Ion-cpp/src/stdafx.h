@@ -7,11 +7,11 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cassert>
+#include <cstring>
 
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <gsl\gsl>

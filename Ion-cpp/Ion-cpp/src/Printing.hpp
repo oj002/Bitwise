@@ -42,7 +42,8 @@ void print_expr(Expr *expr);
 void print_stmt(Stmt* stmt);
 void print_typespec(Typespec *type)
 {
-	switch (Typespec *t{ type }; t->kind)
+	Typespec *t{ type };
+	switch (t->kind)
 	{
 	case Typespec::NAME: PRINTF("%s", t->name); break;
 	case Typespec::FUNC:
@@ -71,7 +72,8 @@ void print_typespec(Typespec *type)
 }
 void print_expr(Expr *expr)
 {
-	switch (Expr *e{ expr }; e->kind)
+	Expr *e{ expr }; 
+	switch (e->kind)
 	{
 	case Expr::INT: PRINTF("%" PRIu64, e->int_val); break;
 	case Expr::FLOAT: PRINTF("%f", e->float_val); break;
@@ -158,7 +160,8 @@ void print_stmt_block(StmtList block)
 }
 void print_stmt(Stmt *stmt)
 {
-	switch (Stmt *s{ stmt }; s->kind)
+	Stmt *s{ stmt }; 
+	switch (s->kind)
 	{
 	case Stmt::DECL: print_decl(stmt->decl);
 	case Stmt::RETURN:
